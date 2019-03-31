@@ -87,7 +87,6 @@ populateShortlist = async () => {
 }
 
 
-
  getUserid = async () => {
   try {
     const value = await AsyncStorage.getItem('userid');

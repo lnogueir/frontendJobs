@@ -12,8 +12,7 @@ import shortListPage from './shortlist.js';
 import loginPage from './login.js';
 import signupPage from './signup.js';
 
-const IP = "http://192.168.0.16" //faculdade
-// const IP = //minha casa
+const IP = "http://192.168.0.16"
 // const IP = "http://172.20.10.6"
 
 class jobPage extends React.Component{
@@ -27,11 +26,10 @@ class jobPage extends React.Component{
         refreshing:false,
         prevPageSize:-1,
         shortlist:{},
+        location:null,
       };
-      this.populateJobs();
       this.getUserid();
-//Se ficar muito devagar no celular, bota this.populateShortlist no refresh
-      setTimeout(()=>{this.populateShortlist()},0.1)
+      setTimeout(()=>this.getLocation(),1);
     }
 
 
@@ -81,15 +79,32 @@ class jobPage extends React.Component{
       );
     }
 
+  getLocation = async () =>{
+    // console.log(this.state.location)
+      let url = IP+":3000/api/profiles/userID?q="+this.state.userid;
+      await fetch(url)
+      .then((response)=>response.json())
+      .then((responseJson)=>{
+        // console.log(responseJson)
+        this.setState(state=>({location:responseJson.profile[0].location}));
+        this.populateJobs()
+      })
+    }
 
 
 populateJobs = async () => {
-  let url = IP+":3000/api/searches?category=all&page="+this.state.page;
+  // console.log(this.state.location)
+  // console.log(this.state.location.split(', '))
+  var location = this.state.location.split(',')
+  // console.log(location)
+  var city = location[0]
+  let url = IP+":3000/api/searches?q="+city+"&category=location&page="+this.state.page;
   await fetch(url)
   .then((response)=>response.json())
   .then((responseJson)=>{
       this.setState(state=>({prevPageSize:responseJson.jobs.length,refreshing:false,
       jobs:this.state.jobs.concat(responseJson.jobs)}));
+      this.populateShortlist()
   })
 }
 
@@ -103,7 +118,7 @@ infiniteScroll = () => {
 
 
 refreshJobs = () => {
-  this.setState(state=>({refreshing:true,page:1,jobs:[]}),()=>this.populateJobs());
+  this.setState(state=>({refreshing:true,page:1,jobs:[]}),()=> this.populateJobs());
 }
 
 getUserid = async () => {
@@ -150,14 +165,6 @@ toShortlist = async (jobId) => {
 
   isJobInShortlist = (id) => {
     return this.state.shortlist[id]==id
-    // let found = false
-    // for(var i = this.state.shortlist.length-1;i>=0;i--){
-    //   if(this.state.shortlist[i][0].id==id){
-    //     found = true
-    //     break;
-    //   }
-    // }
-    // return found
   }
 
 
@@ -168,7 +175,10 @@ toShortlist = async (jobId) => {
       return (
       <View style={styles.container}>
         <NavigationEvents
-        onWillFocus={payload=>this.populateShortlist()}
+        onWillFocus={payload=>{
+          this.setState({jobs:[]})
+          setTimeout(()=>this.getLocation(),1)
+        }}
         />
         <View style={styles.headerStyle}>
          <View style={[styles.innerHeaderStyle,{backgroundColor:'red'}]}>

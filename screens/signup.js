@@ -33,6 +33,31 @@ class signupPage extends React.Component{
     }
   }
 
+  createProfile = async (userid) =>{
+    console.log(this.state.userid)
+    let userData = {
+      userID:userid,
+      username:this.state.username,
+      email:this.state.email,
+      location:this.state.location
+    }
+    var url = IP+':3000/api/profiles'
+    try{
+      let response = await fetch(url,{
+      method:'POST',
+      headers:{
+        'Accept':'application/json',
+        'Content-Type':'application/json',
+      },
+      body:JSON.stringify(userData)
+    });
+    let responseJson = await response.json();
+    console.log(responseJson)
+    return responseJson.result
+  }catch(error){
+    console.log(error)
+  }
+}
 
   createAccount = async () =>{
     let userData = {
@@ -52,9 +77,10 @@ class signupPage extends React.Component{
          body:JSON.stringify(userData)
        });
        let responseJson = await response.json();
-       console.log(responseJson)
+       // console.log(responseJson)
        if(responseJson.error == undefined){
          await alert('Congratulations! 🥳  Your account has been successfully created. You are ready to get HIRED!')
+         this.createProfile(responseJson.id)
          this.props.navigation.goBack()
        }
        else{
@@ -65,7 +91,6 @@ class signupPage extends React.Component{
      }catch(error){
        console.log(error)
      }
-
 }
 
 

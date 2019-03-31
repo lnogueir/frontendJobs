@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,Text, View,Image,StyleSheet} from 'react-native';
-import {NavigationActions,StackActions,createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
+import {NavigationEvents,NavigationActions,StackActions,createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
 import {CheckBox,ThemeProvider,Button,Header} from 'react-native-elements';
 import {LinearGradient} from 'expo';
 import SLIcon from 'react-native-vector-icons/SimpleLineIcons';
@@ -14,29 +14,85 @@ import {widthPercentageToDP as wp,
   removeOrientationListener as rol
 } from 'react-native-responsive-screen';
 
+const IP = "http://192.168.0.16"
+
+
 
 class accountPage extends React.Component{
   constructor(props){
     super(props);
     this.state = {
+      userid:null,
       edit:false,
-      username:'Lucasguns',
-      location:'Canada, Ontario, Toronto',
-      email:'lucasguns@gmail.com',
+      username:null,
+      location:null,
+      email:null,
+      profileID:null,
     };
+    this.getUserid();
   }
 
+
+
+  getUserid = async () => {
+   try {
+     const value = await AsyncStorage.getItem('userid');
+     if (value !== null) {
+       this.setState({userid:value})
+     }
+   } catch (error) {
+     // Error retrieving data
+   }
+ };
 
   _signOutAsync = async () => {
     await AsyncStorage.clear();
     this.props.navigation.navigate('AuthLoading');
   };
 
+  getUserInfo = async () =>{
+    let url = IP+":3000/api/profiles/userID?q="+this.state.userid;
+    await fetch(url)
+    .then((response)=>response.json())
+    .then((responseJson)=>{
+        this.setState(state=>({username:responseJson.profile[0].username,
+        email:responseJson.profile[0].email,location:responseJson.profile[0].location,profileID:responseJson.profile[0].id}));
+    })
+  }
 
+  editUserInfo = async () => {
+    let url = IP+":3000/api/profiles/"+this.state.profileID;
+    let editInfo = {
+      username:this.state.username,
+      email:this.state.email,
+      location:this.state.location
+    }
+    try{
+      let response = await fetch(url,{
+        method:'PATCH',
+        headers:{
+          'Accept':'application/json',
+          'Content-Type':'application/json',
+        },
+        body:JSON.stringify(editInfo)
+      });
+      let responseJson = await response.json();
+      // console.log(responseJson)
+      if(responseJson.error == undefined){
+        alert('User information has been saved')
+      }
+      return responseJson.result;
+    }catch(error){
+      console.log(error)
+    }
+  }
 
   render() {
     return(
       <View style={{flex:1, height:'100%'}}>
+        <NavigationEvents
+        onDidFocus={payload=>setTimeout(()=>{this.getUserInfo()},1)}
+        />
         <View style={{height:'20%',shadowColor:'gray',shadowOpacity:1,shadowRadius:5
         ,flexDirection:'row',justifyContent:'space-evenly',
         alignItems:'center'}}>
@@ -46,7 +102,12 @@ class accountPage extends React.Component{
         </View>
         <View>
           <CheckBox textStyle={{fontSize:25,color:this.state.edit?"#397af8":"orange"}} checkedTitle="Save Info" fontFamily='Avenir'
-          center onPress={()=>this.setState({edit:!this.state.edit})}
+          center onPress={()=>{
+            if(this.state.edit){
+              this.editUserInfo();
+            }
+            this.setState({edit:!this.state.edit})
+          }}
           uncheckedIcon={<EntIcon name='edit'color="orange" size={30}/>}
           checkedIcon={<EntIcon name='save'color="#397af8" size={30}/>}
           checked={this.state.edit} title="Edit Info"
@@ -85,7 +146,7 @@ class accountPage extends React.Component{
                editable={this.state.edit}
                underlineColorAndroid='gray'
                style={{height:40,borderWidth:2,borderColor:'gray',width:250,padding:7}}
-               placeholder='Canada, Ontario, Toronto'
+               placeholder='City, Province, Country'
                onChangeText={(text) => this.setState({location:text})}
                value={this.state.location}
                />
