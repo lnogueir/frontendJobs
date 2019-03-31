@@ -10,7 +10,8 @@ import MatIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import helpers from '../globalFunctions.js';
 
 
-
+const IP = "http://192.168.0.16"
+// const IP = "http://172.20.10.6"
 
 
 
@@ -40,7 +41,7 @@ class signupPage extends React.Component{
        email:this.state.email
        // location:this.state.location
      }
-     var url = 'http://192.168.0.16:3000/api/Users'
+     var url = IP+':3000/api/Users'
      try{
        let response = await fetch(url,{
          method:'POST',
@@ -75,32 +76,42 @@ class signupPage extends React.Component{
       //  <View style={{backgroundColor:'green',width:50,height:50}}></View>
       //  <View style={{backgroundColor:'blue',width:50,height:50}}></View>
       // </View>
-      <View style={{alignItems:'center'}}>
-         <View style={{backgroundColor:'red',width:50,height:50}}></View>
-         <View style={{marginTop:'10%',marginLeft:'15%',marginRight:'15%',flexDirection:'column'}}>
+      <View style={{flex:1,height:'100%'}}>
+      <View style={{height:'20%',shadowColor:'gray',shadowOpacity:1,shadowRadius:5
+      ,flexDirection:'row',justifyContent:'space-evenly',
+      alignItems:'center'}}>
+        <View style={[{backgroundColor:'red'},styles.innerHeaderStyle]}></View>
+        <View style={[{backgroundColor:'green'},styles.innerHeaderStyle]}></View>
+        <View style={[{backgroundColor:'blue'},styles.innerHeaderStyle]}></View>
+      </View>
+         <View style={{marginLeft:'13%',marginRight:'13%',flexDirection:'column'}}>
             <Text style={{margin:5,fontSize:23}}><Icon name='user-circle' color='black' size={30}/> Username: </Text>
             <TextInput
+            clearButtonMode='while-editing'
             style={{height:40,borderWidth:2,borderColor:'gray',width:230,padding:7}}
             placeholder='Username'
             onChangeText={(text) => this.setState({username:text})}
             value={this.state.username}
             />
          </View>
-         <View style={{marginTop:'3%',marginRight:'15%',marginLeft:'15%',flexDirection:'column'}}>
+         <View style={{marginTop:'3%',marginRight:'13%',marginLeft:'13%',flexDirection:'column'}}>
               <Text style={{margin:5,fontSize:23}}><Icon name='hashtag' color='black' size={30}/> Password:  </Text>
-              <TextInput
-              secureTextEntry={!this.state.checked}
-              style={{height:40,borderWidth:2,borderColor:'gray',width:230,padding:7}}
-              placeholder='Password'
-              onChangeText={(text) => this.setState({password:text})}
-              value={this.state.password}
-              />
-              <CheckBox iconRight
-              onPress={()=>this.setState({checked:!this.state.checked})}title='Show my password' checked={this.state.checked}
-              />
+              <View style={{flexDirection:'row'}}>
+                <TextInput
+                clearButtonMode='while-editing'
+                secureTextEntry={!this.state.checked}
+                style={{height:40,borderWidth:2,borderColor:'gray',width:230,padding:7}}
+                placeholder='Password'
+                onChangeText={(text) => this.setState({password:text})}
+                value={this.state.password}
+                />
+                <CheckBox containerStyle={{paddingLeft:1,backgroundColor:'white',borderWidth:0}}
+                onPress={()=>this.setState({checked:!this.state.checked})}
+                 title='Show' checked={this.state.checked}
+                />
+              </View>
          </View>
-         <View style={{margin:'7%',backgroundColor:'green',width:50,height:50}}></View>
-         <View style={{marginRight:'15%',marginLeft:'15%',flexDirection:'column'}}>
+         <View style={{marginRight:'13%',marginLeft:'13%',flexDirection:'column'}}>
               <Text style={{margin:5,fontSize:23}}><MatIcon name='email' color='black' size={30}/> Email:  </Text>
               <TextInput
               style={{height:40,borderWidth:2,borderColor:'gray',width:230,padding:7}}
@@ -109,8 +120,8 @@ class signupPage extends React.Component{
               value={this.state.email}
               />
          </View>
-         <View style={{marginTop:'3%',marginRight:'15%',marginLeft:'15%',flexDirection:'column'}}>
-              <Text style={{margin:5,fontSize:23}}><MatIcon name='map-marker-radius' color='black' size={30}/> Job Area:  </Text>
+         <View style={{marginTop:'3%',marginRight:'13%',marginLeft:'13%',flexDirection:'column'}}>
+              <Text style={{margin:5,fontSize:23}}><MatIcon name='map-marker-radius' color='black' size={30}/> Job City:  </Text>
               <TextInput
               style={{height:40,borderWidth:2,borderColor:'gray',width:230,padding:7}}
               placeholder='Canada, Ontario, Toronto'
@@ -118,8 +129,7 @@ class signupPage extends React.Component{
               value={this.state.location}
               />
           </View>
-          <Button onPress={() => {this.createAccount()} } style={{marginTop:'8%'}} type='outline' title='Sign Up!'/>
-          <View style={{marginTop:'18%',backgroundColor:'blue',width:50,height:50}}></View>
+          <Button onPress={() => {this.createAccount()} } style={{width:'50%',alignSelf:'center',marginVertical:'11%'}} type='outline' title='Sign Up'/>
       </View>
     );
 
@@ -186,10 +196,10 @@ const styles = StyleSheet.create({
     shadowRadius:5,
   },
   innerHeaderStyle:{
-    // marginHorizontal:'2%',
+    marginHorizontal:'4%',
     width:50,
     height:50,
-    borderRadius:7,
+    borderRadius:0,
     alignItems:'center',
     justifyContent:'center',
   },

@@ -1,31 +1,56 @@
 import React, {Component} from 'react';
-import {ActivityIndicator, TextInput,Alert,Linking,TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,Text, View,Image,StyleSheet} from 'react-native';
-import {createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
+import {AsyncStorage,ActivityIndicator, TextInput,Alert,
+  Linking,TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,Text,
+  View,Image,StyleSheet} from 'react-native';
+import {NavigationActions,StackActions,createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
 import {CheckBox,ThemeProvider,Button,Header} from 'react-native-elements';
 import {LinearGradient} from 'expo';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 // import Icon from 'react-native-vector-icons';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import AntIcon from 'react-native-vector-icons/AntDesign';
 import helpers from '../globalFunctions.js';
 import signupPage from './signup.js';
 
-
+const IP = "http://192.168.0.16"
+// const IP = "http://172.20.10.6"
 
 class loginPage extends React.Component{
   constructor(props){
     super(props);
-    this.state = {username:null,
+    this.state = {
+    username:null,
     password:null,
-    checked:false};
+    checked:false,
+    error:'',
+  };
+  }
+
+
+  // componentDidMount = () =>{
+  //   AsyncStorage.getItem('userid').then((user)=>{
+  //     this.props.navigation.dispatch(NavigationActions.reset({
+  //       index:0,
+  //       actions:[NavigationActions.navigate({routeName:})]
+  //     }))
+  //   })
+  // }
+
+  static navigationOptions = ({navigation}) => {
+    return {
+      // headerLeft:<Button title=' Search' onPress={() => navigation.goBack()}/>,
+      title: 'Authentication'
+    }
   }
 
 
   handleLogin = async () => {
+    // console.log('hello')
     let userData = {
        username:this.state.username,
        password:this.state.password
      }
-     var url = 'http://192.168.0.16:3000/api/Users/login'
+     var url = IP+':3000/api/Users/login'
      try{
        let response = await fetch(url,{
          method:'POST',
@@ -37,13 +62,22 @@ class loginPage extends React.Component{
        });
        let responseJson = await response.json();
        if(responseJson.error==undefined){
-         this.props.navigation.navigate('MainStack')
+
+         await AsyncStorage.setItem('userid', responseJson.userId.toString());
+         this.props.navigation.navigate('Main');
+        //  const resetAction = StackActions.reset({
+        //     index: 0,
+        //     actions: [NavigationActions.navigate({ routeName: 'MainStack' })],
+        // });
+        //  this.props.navigation.dispatch(resetAction);
+
        }else{
-         alert("Sorry, the username or password is wrong. 💩")
+         this.setState({error:'Sorry, username and/or password invalid.'})
+         // alert("Sorry, the username or password is wrong. 💩")
        }
        return responseJson.result;
      }catch(error){
-       // console.log('Error?')
+       // console.log('hello')
        console.log(error)
      }
 
@@ -52,57 +86,65 @@ class loginPage extends React.Component{
 
   render(){
     return (
-    <View marginTop='8%' style={{flexDirection:'column',justifyContent:'space-between'}}>
-      <View style={{alignItems:'center',justifyContent:'center',marginVertical:'19%'}}>
-        <View style={styles.headerStyle}>
-         <View style={[styles.innerHeaderStyle,{backgroundColor:'red'}]}>
-           <Text style={{color:'white', fontSize:27,fontWeight:'bold'}}>J</Text>
-         </View>
-         <View style={[styles.innerHeaderStyle,{backgroundColor:'green'}]}>
-           <Text style={{color:'white',fontSize:27,fontWeight:'bold'}}>O</Text>
-         </View>
-         <View style={[styles.innerHeaderStyle,{backgroundColor:'blue'}]}>
-            <Text style={{color:'white',fontSize:27,fontWeight:'bold'}}>B</Text>
-         </View>
+    <View style={{flex:1}}>
+      <View style={{flexDirection:'column',justifyContent:'space-between'}}>
+        <View style={{alignItems:'center',justifyContent:'center',marginVertical:'19%'}}>
+          <View style={styles.headerStyle}>
+           <View style={[styles.innerHeaderStyle,{backgroundColor:'red'}]}>
+             <Text style={{color:'white', fontSize:35,fontWeight:'bold'}}>J</Text>
+           </View>
+           <View style={[styles.innerHeaderStyle,{backgroundColor:'green'}]}>
+             <Text style={{color:'white',fontSize:35,fontWeight:'bold'}}>O</Text>
+           </View>
+           <View style={[styles.innerHeaderStyle,{backgroundColor:'blue'}]}>
+              <Text style={{color:'white',fontSize:35,fontWeight:'bold'}}>B</Text>
+           </View>
+          </View>
         </View>
-      </View>
-      <View style={{alignItems:'center',justifyContent:'center'}}>
-        <Text style={{fontSize:20, fontFamily:'Avenir'}}> Login to <Text style={{fontWeight:'bold',color:'red'}}>J</Text><Text style={{fontWeight:'bold',color:'green'}}>O</Text><Text style={{fontWeight:'bold',color:'blue'}}>B</Text> and get hired! </Text>
-      </View>
-      <View style={styles.login}>
-        <TextInput
-        style={{height:45,borderBottomWidth:2,borderColor:'gray',width:270,padding:7}}
-        placeholder='Username'
-        onChangeText={(text) => this.setState({username:text})}
-        value={this.state.username}
-        />
-        <TextInput
-        secureTextEntry={true}
-        style={{height:45,borderBottomWidth:2,borderColor:'gray',width:270,padding:7}}
-        placeholder='Password'
-        onChangeText={(text) => this.setState({password:text})}
-        value={this.state.password}
-        />
-      </View>
-        <View style={{width:'100%',justifyContent:'center',flexDirection:'row'}}>
-          <CheckBox iconRight checkedColor='green'
-          onPress={()=>this.setState({checked:!this.state.checked})}title='Keep me logged in' checked={this.state.checked}/>
-          <Button style={{marginTop:7,marginRight:6}}
-          title='Log in'
-          onPress={()=> {this.handleLogin()}}/>
+        <View style={{alignItems:'center',justifyContent:'center'}}>
+          <Text style={{fontSize:23, fontFamily:'Avenir'}}> Login to <Text style={{fontWeight:'bold',color:'red'}}>J</Text><Text style={{fontWeight:'bold',color:'green'}}>O</Text><Text style={{fontWeight:'bold',color:'blue'}}>B</Text> and get hired! </Text>
         </View>
-        <View style={{width:'100%',justifyContent:'center',alignItems:'center'}}>
-          <Button type='clear' title='Forgot password?'/>
-        </View>
-        <Button onPress={() => {this.props.navigation.navigate('signupPage')}} icon={
-          <Icon
-            name='user-circle'
-            size={25}
-            color='white'
-            />
-        }
-          style={{marginTop:'9%'}} title='  Or create account'
+        <View style={styles.login}>
+          <TextInput
+          clearButtonMode='while-editing'
+          style={{height:45,borderBottomWidth:2,borderColor:'gray',width:270,padding:7}}
+          placeholder='Username'
+          onChangeText={(text) => this.setState({username:text})}
+          value={this.state.username}
           />
+          <TextInput
+          clearButtonMode='while-editing'
+          secureTextEntry={true}
+          style={{height:45,borderBottomWidth:2,borderColor:'gray',width:270,padding:7}}
+          placeholder='Password'
+          onChangeText={(text) => this.setState({password:text})}
+          value={this.state.password}
+          />
+        </View>
+          <View style={{width:'100%',justifyContent:'center',flexDirection:'row'}}>
+            <Button titleStyle={{fontSize:20}} style={{lineHeight:15}} type='clear' title='Forgot password?'/>
+            <Button titleStyle={{fontSize:20}} style={{lineHeight:15}} iconRight type='clear' icon={<AntIcon name='login' color='#397af8' size={26}/>}
+            title='Sign In    '
+            onPress={()=>{this.handleLogin()}}/>
+          </View>
+          <View style={{width:'100%',justifyContent:'center',alignItems:'center'}}>
+            <Text></Text>
+          </View>
+
+          <View style={{width:'100%',justifyContent:'center',alignItems:'center'}}>
+            <Text style={{color:'red'}}>{this.state.error}</Text>
+          </View>
+
+          <Button buttonStyle={{margin:30}} onPress={() => {this.props.navigation.navigate('signupPage')}} icon={
+            <Icon
+              name='user-circle'
+              size={25}
+              color='white'
+              />
+          }
+            style={{marginTop:'9%'}} title='  Or create account'
+            />
+      </View>
     </View>
   );
 }
@@ -147,8 +189,8 @@ const styles = StyleSheet.create({
   },
   innerHeaderStyle:{
     // marginHorizontal:'2%',
-    width:50,
-    height:50,
+    width:60,
+    height:60,
     borderRadius:7,
     alignItems:'center',
     justifyContent:'center',
