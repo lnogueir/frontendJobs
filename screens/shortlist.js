@@ -239,9 +239,9 @@ const styles = StyleSheet.create({
     paddingHorizontal:15,
     flexDirection:'column',
     justifyContent:'space-between',
-    borderBottomWidth:6,
-    borderColor:'white',
-    shadowOpacity:0
+    borderBottomWidth:5,
+    borderColor:'lightgray',
+    shadowOpacity:0.2
 
   },
   jobTitle:{
