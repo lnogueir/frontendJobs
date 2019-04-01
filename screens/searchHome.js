@@ -1,5 +1,7 @@
 import React, {Component} from 'react';
-import {AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,Text, View,Image,StyleSheet} from 'react-native';
+import {AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,
+  TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,
+  Text, View,Image,StyleSheet,TouchableWithoutFeedback, Keyboard} from 'react-native';
 import {createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
 import {ThemeProvider,Button,Header} from 'react-native-elements';
 import {LinearGradient} from 'expo';
@@ -15,7 +17,6 @@ class Home extends React.Component{
 
   constructor(props){
     super(props)
-    // var navigation = this.props.navigation;
     this.state = {
       text: '',
   };
@@ -24,6 +25,7 @@ class Home extends React.Component{
 
   render() {
     return (
+  <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={styles.container}>
       <View style={styles.headerStyle}>
          <View style={{justifyContent:'center',alignItems:'center',backgroundColor:'red',width:50,height:50,borderRadius:7}}>
@@ -42,6 +44,15 @@ class Home extends React.Component{
         style={{height:45,borderWidth:2,borderColor:'gray',width:200,padding:7}}
         placeholder='Search position!'
         onChangeText={(text) => this.setState({text:text})}
+        returnKeyType={'search'}
+        onSubmitEditing={()=>{
+          if(this.state.text==undefined || this.state.text.length==0){
+            alert('Invalid Input. Please fill the entry.');
+          }else{
+            this.props.navigation.push('findPage',{searchKey:this.state.text});
+            this.setState({text:''});
+        }
+        }}
         value={this.state.text}
         />
         <Button
@@ -60,7 +71,9 @@ class Home extends React.Component{
         type='clear'
         />
       </View>
+
     </View>
+  </TouchableWithoutFeedback>
     );
   }
 }

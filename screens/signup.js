@@ -1,5 +1,7 @@
 import React, {Component} from 'react';
-import {ActivityIndicator, TextInput,Alert,Linking,TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,Text, View,Image,StyleSheet} from 'react-native';
+import {ActivityIndicator, TextInput,Alert,Linking, KeyboardAvoidingView,
+  TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,TouchableWithoutFeedback,
+  Keyboard,ScrollView,Text, View,Image,StyleSheet} from 'react-native';
 import {createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
 import {ThemeProvider,Button,Header,CheckBox} from 'react-native-elements';
 import {LinearGradient} from 'expo';
@@ -8,7 +10,11 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MatIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import helpers from '../globalFunctions.js';
-
+import {widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+  listenOrientationChange as loc,
+  removeOrientationListener as rol
+} from 'react-native-responsive-screen';
 
 const IP = "http://192.168.0.16"
 // const IP = "http://172.20.10.6"
@@ -59,6 +65,21 @@ class signupPage extends React.Component{
   }
 }
 
+  asyncAlert = async () =>{
+    return new Promise((resolve,reject)=>{
+      Alert.alert(
+        'Congratulations! 🥳 🥳',
+        'Your account has been successfully created. You are ready to get HIRED!',
+        [
+          {text:'Ok',onPress:()=>{resolve('YES')}},
+          // {text:'No', onPress:()=>{resolve('NO')}},
+        ],
+        {cancelable:false}
+      )
+    })
+
+  }
+
   createAccount = async () =>{
     let userData = {
        username:this.state.username,
@@ -79,8 +100,9 @@ class signupPage extends React.Component{
        let responseJson = await response.json();
        // console.log(responseJson)
        if(responseJson.error == undefined){
-         await alert('Congratulations! 🥳  Your account has been successfully created. You are ready to get HIRED!')
          this.createProfile(responseJson.id)
+         await this.asyncAlert()
+         // await alert('Congratulations! 🥳  Your account has been successfully created. You are ready to get HIRED!')
          this.props.navigation.goBack()
        }
        else{
@@ -101,61 +123,88 @@ class signupPage extends React.Component{
       //  <View style={{backgroundColor:'green',width:50,height:50}}></View>
       //  <View style={{backgroundColor:'blue',width:50,height:50}}></View>
       // </View>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={{flex:1,height:'100%'}}>
-      <View style={{height:'20%',shadowColor:'gray',shadowOpacity:1,shadowRadius:5
-      ,flexDirection:'row',justifyContent:'space-evenly',
-      alignItems:'center'}}>
-        <View style={[{backgroundColor:'red'},styles.innerHeaderStyle]}></View>
-        <View style={[{backgroundColor:'green'},styles.innerHeaderStyle]}></View>
-        <View style={[{backgroundColor:'blue'},styles.innerHeaderStyle]}></View>
-      </View>
-         <View style={{marginLeft:'13%',marginRight:'13%',flexDirection:'column'}}>
-            <Text style={{margin:5,fontSize:23}}><Icon name='user-circle' color='black' size={30}/> Username: </Text>
-            <TextInput
+        <View style={{height:'20%',shadowColor:'gray',shadowOpacity:1,shadowRadius:5
+        ,flexDirection:'row',justifyContent:'space-evenly',
+        alignItems:'center'}}>
+          <View style={[{backgroundColor:'red'},styles.innerHeaderStyle]}></View>
+          <View style={[{backgroundColor:'green'},styles.innerHeaderStyle]}></View>
+          <View style={[{backgroundColor:'blue'},styles.innerHeaderStyle]}></View>
+        </View>
+
+        <View style={{alignItems:'center',justifyContent:'space-evenly', width:'100%',flexDirection:'row'}}>
+          <Text style={{fontSize:23,width:wp('40%')}}><Icon name='user-circle' color='black' size={30}/> Username:</Text>
+          <Text style={{fontSize:23, width:wp('40%')}}><MatIcon name='email' color='black' size={30}/> Email:</Text>
+        </View>
+        <View style={{marginVertical:8,alignItems:'center',justifyContent:'space-evenly',width:'100%',flexDirection:'row'}}>
+          <TextInput
+            onSubmitEditing={()=>this.emailInput.focus()}
+            returnKeyType={'next'}
+            blurOnSubmit={false}
             clearButtonMode='while-editing'
-            style={{height:40,borderWidth:2,borderColor:'gray',width:230,padding:7}}
+            style={{height:40,borderWidth:2,borderColor:'gray',
+            width:wp('44%'),padding:10,borderRadius:20}}
             placeholder='Username'
             onChangeText={(text) => this.setState({username:text})}
             value={this.state.username}
             />
-         </View>
-         <View style={{marginTop:'3%',marginRight:'13%',marginLeft:'13%',flexDirection:'column'}}>
-              <Text style={{margin:5,fontSize:23}}><Icon name='hashtag' color='black' size={30}/> Password:  </Text>
-              <View style={{flexDirection:'row'}}>
-                <TextInput
-                clearButtonMode='while-editing'
-                secureTextEntry={!this.state.checked}
-                style={{height:40,borderWidth:2,borderColor:'gray',width:230,padding:7}}
-                placeholder='Password'
-                onChangeText={(text) => this.setState({password:text})}
-                value={this.state.password}
-                />
-                <CheckBox containerStyle={{paddingLeft:1,backgroundColor:'white',borderWidth:0}}
-                onPress={()=>this.setState({checked:!this.state.checked})}
-                 title='Show' checked={this.state.checked}
-                />
-              </View>
-         </View>
-         <View style={{marginRight:'13%',marginLeft:'13%',flexDirection:'column'}}>
-              <Text style={{margin:5,fontSize:23}}><MatIcon name='email' color='black' size={30}/> Email:  </Text>
-              <TextInput
-              style={{height:40,borderWidth:2,borderColor:'gray',width:230,padding:7}}
-              placeholder='example@email.com'
-              onChangeText={(text) => this.setState({email:text})}
-              value={this.state.email}
-              />
-         </View>
-         <View style={{marginTop:'3%',marginRight:'13%',marginLeft:'13%',flexDirection:'column'}}>
-              <Text style={{margin:5,fontSize:23}}><MatIcon name='map-marker-radius' color='black' size={30}/> Job City:  </Text>
-              <TextInput
-              style={{height:40,borderWidth:2,borderColor:'gray',width:230,padding:7}}
-              placeholder='Canada, Ontario, Toronto'
+          <TextInput
+           ref={(input)=>{this.emailInput = input}}
+           returnKeyType={'next'}
+           clearButtonMode='while-editing'
+           style={{height:40,borderWidth:2,borderColor:'gray',
+           width:wp('44%'),padding:10,borderRadius:20}}
+           placeholder='example@email.com'
+           keyboardType='email-address'
+           onSubmitEditing={()=>this.passwordInput.focus()}
+           blurOnSubmit={false}
+           onChangeText={(text) => this.setState({email:text})}
+           value={this.state.email}
+           />
+        </View>
+        <View style={{marginVertical:8,alignItems:'center',justifyContent:'space-evenly', width:'100%',flexDirection:'row'}}>
+          <Text style={{fontSize:23,width:wp('40%')}}><Icon name='lock' color='black' size={30}/> Password:</Text>
+          <Text style={{width:wp('40%'),fontSize:23}}><MatIcon name='map-marker-radius' color='black' size={30}/> Job City:</Text>
+        </View>
+        <View style={{alignItems:'center',justifyContent:'space-evenly',width:'100%',flexDirection:'row'}}>
+          <TextInput
+             ref={(input)=>{this.passwordInput = input}}
+             returnKeyType={'next'}
+             clearButtonMode='while-editing'
+             secureTextEntry={!this.state.checked}
+             style={{height:40,borderWidth:2,borderColor:'gray',
+             width:wp('44%'),padding:10,borderRadius:20}}
+             placeholder='Password'
+             onChangeText={(text) => this.setState({password:text})}
+             value={this.state.password}
+             onSubmitEditing={()=>this.locationInput.focus()}
+             blurOnSubmit={false}
+             />
+           <TextInput
+              ref={(input)=>{this.locationInput = input}}
+              returnKeyType={'done'}
+              clearButtonMode='while-editing'
+              style={{height:40,borderWidth:2,borderColor:'gray',
+              width:wp('44%'),padding:10,borderRadius:20}}
+              placeholder='City, Province, Country'
               onChangeText={(text) => this.setState({location:text})}
               value={this.state.location}
+
               />
-          </View>
-          <Button onPress={() => {this.createAccount()} } style={{width:'50%',alignSelf:'center',marginVertical:'11%'}} type='outline' title='Sign Up'/>
+        </View>
+        <View style={{alignItems:'center',justifyContent:'space-evenly',width:'100%',flexDirection:'row'}}>
+        <CheckBox
+         containerStyle={{width:wp('35%')}}
+         checkedIcon='dot-circle-o'
+         uncheckedIcon='circle-o'
+         onPress={()=>this.setState({checked:!this.state.checked})}
+         title='Show my password' checked={this.state.checked}
+          />
+        <Button onPress={() => {this.createAccount()} } style={{width:wp('40%'),alignSelf:'center',marginVertical:'11%'}} type='outline' title='Sign Up'/>
+        </View>
       </View>
+      </TouchableWithoutFeedback>
     );
 
   }

@@ -7,6 +7,11 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import IconAntD from 'react-native-vector-icons/AntDesign';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Entypo from 'react-native-vector-icons/Entypo';
+import {widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+  listenOrientationChange as loc,
+  removeOrientationListener as rol
+} from 'react-native-responsive-screen';
 import helpers from '../globalFunctions.js';
 
 const IP = "http://192.168.0.16"
@@ -19,7 +24,7 @@ class shortListPage extends React.Component{
     this.state={
       shortlist:[],
       userid:null,
-      // refreshing:false,
+      refreshing:false,
     }
 
     this.getUserid();
@@ -136,9 +141,9 @@ populateShortlist = async () => {
 
 
 
-// refreshShortlist = () => {
-//   this.setState(state=>({refreshing:true,shortlist:[]}),()=>this.populateShortlist());
-// }
+refreshShortlist = () => {
+  this.setState(state=>({refreshing:true,shortlist:[]}),()=>this.populateShortlist());
+}
 
 render(){
   // this.populateShortlist()
@@ -158,8 +163,8 @@ render(){
         titleStyle={{fontSize:24}} buttonStyle={{borderRadius:20,width:'100%',backgroundColor:'orange'}}
         title={this.state.shortlist.length!=0?' Clear Shortlist':' Empty Shortlist'}/>
         <FlatList
-        // refreshing={this.state.refreshing}
-        // onRefresh={()=>this.refreshShortlist()}
+        refreshing={this.state.refreshing}
+        onRefresh={()=>this.refreshShortlist()}
         // onEndReached={()=>this.infiniteScrollSearch()}
         // onEndReachedThreshold={0}
         data={this.state.shortlist}
@@ -175,17 +180,17 @@ render(){
               <Text style={styles.jobInfoText}>{'\n'}<Text style={{fontWeight:'bold',fontSize:16}}>Summary:</Text> {item[0].summary}{'\n'}</Text>
               <View style={{flexDirection:'row',justifyContent:'space-evenly',width:'100%'}}>
                 <Button onPress={()=>{this.deleteShortlist(item[0].id,false)}} buttonStyle={{borderColor:'red'}}
-                titleStyle={{color:'red',fontSize:17}} type='outline' style={{height:47,width:110}}
+                titleStyle={{color:'red',fontSize:17}} type='outline' style={{height:46,width:wp('26.5%')}}
                 icon={<IconAntD name='minuscircle' color='red' size={25} />} title=' Remove' />
                 <Button
                 titleStyle={{fontSize:17}}
                 buttonStyle={{backgroundColor:'#66ccff'}}
                 icon={<Icon name='expand' color='white' size={28}/>}
-                style={{height:46,width:110}}
+                style={{height:46,width:wp('26.5%')}}
                 title='  Expand'
                 onPress = {()=>this.props.navigation.push('expandJob',{jobId:item.id})}
                 />
-                <Button style={{color:'white', height:47,width:110}} onPress={() => Linking.openURL(item[0].link)}
+                <Button style={{color:'white', height:46,width:wp('26.5%')}} onPress={() => Linking.openURL(item[0].link)}
                 icon={<Icon name='id-card' color='white' size={28}/>} title=' Apply!'/>
               </View>
             </View>

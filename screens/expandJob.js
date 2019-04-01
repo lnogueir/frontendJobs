@@ -1,5 +1,7 @@
 import React, {Component} from 'react';
-import {AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,Text, View,Image,StyleSheet} from 'react-native';
+import {AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,
+  TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,
+  Text, View,Image,StyleSheet,KeyboardAvoidingView} from 'react-native';
 import {NavigationEvents,createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
 import {ThemeProvider,Button,Header} from 'react-native-elements';
 import {LinearGradient} from 'expo';
@@ -21,6 +23,7 @@ class expandJob extends React.Component{
   constructor(props){
     super(props);
     this.state={
+      email:null,
       jobId:this.props.navigation.getParam('jobId','Invalid job')
     };
 
@@ -29,9 +32,15 @@ class expandJob extends React.Component{
 
   render(){
     return(
-      <View style={styles.container}>
-        <Text> Hello World! </Text>
-      </View>
+      <KeyboardAvoidingView enabled behavior='padding' style={{flex:1, justifyContent:'flex-end',alignItems:'center'}}>
+        <Text style={{margin:5,fontSize:23}}> Email:  </Text>
+          <TextInput
+          style={{height:40,borderWidth:2,borderColor:'gray',width:230,padding:7}}
+          placeholder='example@email.com'
+          onChangeText={(text) => this.setState({email:text})}
+          value={this.state.email}
+          />
+      </KeyboardAvoidingView>
     )
   }
 

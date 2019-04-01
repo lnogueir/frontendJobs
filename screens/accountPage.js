@@ -1,5 +1,7 @@
 import React, {Component} from 'react';
-import {AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,Text, View,Image,StyleSheet} from 'react-native';
+import {AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,
+  TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,
+  Text, View,Image,StyleSheet,KeyboardAvoidingView} from 'react-native';
 import {NavigationEvents,NavigationActions,StackActions,createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
 import {CheckBox,ThemeProvider,Button,Header} from 'react-native-elements';
 import {LinearGradient} from 'expo';
@@ -45,6 +47,39 @@ class accountPage extends React.Component{
    }
  };
 
+ asyncAlert = async (logout) =>{
+   return new Promise((resolve,reject)=>{
+     Alert.alert(
+       'Warning',
+       logout?"You haven't saved your changes. Are you sure you want to sign out?":
+       "You haven't saved your changes. Would you like to save?",
+       [
+         {text:'No', onPress:()=>{resolve(false)}},
+         {text:'Yes',onPress:()=>{resolve(true)}},
+       ],
+       {cancelable:false}
+     )
+   })
+ }
+
+ callAlertLogout = async () => {
+   await this.asyncAlert(true).then((response)=>{
+     if(response){
+       this._signOutAsync()
+     }
+   })
+ }
+
+ callAlertNavigate = async (dest) => {
+   await this.asyncAlert(false).then((response)=>{
+     if(response){
+       this.editUserInfo()
+     }
+     this.setState({edit:false})
+     this.props.navigation.navigate(dest)
+   })
+ }
+
   _signOutAsync = async () => {
     await AsyncStorage.clear();
     this.props.navigation.navigate('AuthLoading');
@@ -78,9 +113,6 @@ class accountPage extends React.Component{
       });
       let responseJson = await response.json();
       // console.log(responseJson)
-      if(responseJson.error == undefined){
-        alert('User information has been saved')
-      }
       return responseJson.result;
     }catch(error){
       console.log(error)
@@ -91,7 +123,17 @@ class accountPage extends React.Component{
     return(
       <View style={{flex:1, height:'100%'}}>
         <NavigationEvents
-        onDidFocus={payload=>setTimeout(()=>{this.getUserInfo()},1)}
+        onDidFocus={payload=>{
+          if(!this.state.edit){
+            setTimeout(()=>{this.getUserInfo()},1)
+          }
+        }}
+        onWillBlur={payload=>{
+          if(this.state.edit){
+            this.props.navigation.navigate('Account')
+            this.callAlertNavigate(payload.action.routeName)
+          }
+        }}
         />
         <View style={{height:'20%',shadowColor:'gray',shadowOpacity:1,shadowRadius:5
         ,flexDirection:'row',justifyContent:'space-evenly',
@@ -113,47 +155,62 @@ class accountPage extends React.Component{
           checked={this.state.edit} title="Edit Info"
           />
         </View>
+        <KeyboardAvoidingView behavior='padding' style={{flex:1,justifyContent:'space-between'}}>
         <View style={styles.entries}>
-          <View style={{marginTop:'3%'}}>
-             <Text style={{margin:5,fontSize:23}}><Icon name='user-circle' color='black' size={30}/> Username: </Text>
-             <TextInput
-             clearButtonMode={this.state.edit?'always':'never'}
-             style={{height:40,borderWidth:2,borderColor:'gray',width:250,padding:7}}
-             editable={this.state.edit}
-             autoFocus={this.state.edit}
-             placeholder='Username'
-             onChangeText={(text) => this.setState({username:text})}
-             value={this.state.username}
-             />
-          </View>
-          <View style={{marginTop:'3%'}}>
-               <Text style={{margin:5,fontSize:23}}><MatIcon name='email' color='black' size={30}/> Email:  </Text>
+            <View style={{marginTop:'3%'}}>
+               <Text style={{margin:5,fontSize:23}}><Icon name='user-circle' color='black' size={30}/> Username: </Text>
                <TextInput
+               returnKeyType={'done'}
                clearButtonMode={this.state.edit?'always':'never'}
-               editable={this.state.edit}
-               // autoFocus={this.state.edit}
                style={{height:40,borderWidth:2,borderColor:'gray',width:250,padding:7}}
-               placeholder='example@email.com'
-               onChangeText={(text) => this.setState({email:text})}
-               value={this.state.email}
-               />
-          </View>
-          <View style={{marginTop:'3%'}}>
-               <Text style={{margin:5,fontSize:23}}><MatIcon name='map-marker-radius' color='black' size={30}/> Job City:  </Text>
-               <TextInput
-               clearButtonMode={this.state.edit?'always':'never'}
-               // autoFocus={this.state.edit}
                editable={this.state.edit}
-               underlineColorAndroid='gray'
-               style={{height:40,borderWidth:2,borderColor:'gray',width:250,padding:7}}
-               placeholder='City, Province, Country'
-               onChangeText={(text) => this.setState({location:text})}
-               value={this.state.location}
+               autoFocus={this.state.edit}
+               placeholder='Username'
+               onChangeText={(text) => this.setState({username:text})}
+               value={this.state.username}
                />
-           </View>
-          <Button style={{marginTop:'5%'}} iconRight icon={<Icon name="chevron-right" color="#397af8" size={30}/>} type="clear" title="Change Password   "/>
-          <Button style={{marginTop:'8%'}} type="outline" icon={<SLIcon name="logout" color="#397af8" size={33}/>} onPress={()=>{this._signOutAsync()}} title='   Sign out'/>
+            </View>
+            <View style={{marginTop:'3%'}}>
+                 <Text style={{margin:5,fontSize:23}}><MatIcon name='email' color='black' size={30}/> Email:  </Text>
+                 <TextInput
+                 returnKeyType={'done'}
+                 clearButtonMode={this.state.edit?'always':'never'}
+                 editable={this.state.edit}
+                 // autoFocus={this.state.edit}
+                 style={{height:40,borderWidth:2,borderColor:'gray',width:250,padding:7}}
+                 placeholder='example@email.com'
+                 onChangeText={(text) => this.setState({email:text})}
+                 value={this.state.email}
+                 />
+            </View>
+            <View style={{marginTop:'3%'}}>
+                 <Text style={{margin:5,fontSize:23}}><MatIcon name='map-marker-radius' color='black' size={30}/> Job City:  </Text>
+                 <TextInput
+                 returnKeyType={'done'}
+                 clearButtonMode={this.state.edit?'always':'never'}
+                 // autoFocus={this.state.edit}
+                 editable={this.state.edit}
+                 underlineColorAndroid='gray'
+                 style={{height:40,borderWidth:2,borderColor:'gray',width:250,padding:7}}
+                 placeholder='City, Province, Country'
+                 onChangeText={(text) => this.setState({location:text})}
+                 value={this.state.location}
+                 />
+             </View>
+            <Button style={{marginTop:'5%'}} iconRight icon={<Icon name="chevron-right" color="#397af8" size={30}/>} type="clear" title="Change Password   "/>
+          <Button style={{marginTop:'8%'}} type="outline"
+          icon={<SLIcon name="logout" color="#397af8" size={33}/>}
+          onPress={()=>{
+          if(this.state.edit){
+              this.callAlertLogout()
+          }else{
+              this._signOutAsync()
+          }
+
+          }}
+          title='   Sign out'/>
         </View>
+        </KeyboardAvoidingView>
       </View>
     );
   }

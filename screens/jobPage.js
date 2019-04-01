@@ -6,8 +6,12 @@ import {LinearGradient} from 'expo';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 // import Icon from 'react-native-vector-icons';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+  listenOrientationChange as loc,
+  removeOrientationListener as rol
+} from 'react-native-responsive-screen';
 import helpers from '../globalFunctions.js';
-
 import shortListPage from './shortlist.js';
 import loginPage from './login.js';
 import signupPage from './signup.js';
@@ -208,11 +212,11 @@ toShortlist = async (jobId) => {
                   <Text style={styles.jobInfoText}><Text style={{fontWeight:'bold',fontSize:16}}>Company:</Text> {item.company}</Text>
                   <Text style={styles.jobInfoText}><Text style={{fontWeight:'bold',fontSize:16}}>Location:</Text> {item.location}<Text style={{fontWeight:'bold',fontSize:16}}>{'\t'}Salary:</Text> {item.salary}</Text>
                   <Text style={styles.jobInfoText}>{'\n'}<Text style={{fontWeight:'bold',fontSize:16}}>Summary:</Text> {item.summary}{'\n'}</Text>
-                  <View style={{flexDirection:'row',justifyContent:'space-evenly',widht:'100%'}}>
+                  <View style={{flexDirection:'row',justifyContent:'space-evenly',width:'100%'}}>
                     <Button onPress ={() => {this.toShortlist(item.id)}}
                       titleStyle={{fontSize:17}}
                       disabled={this.isJobInShortlist(item.id)}
-                      style={{height:46,width:110}} icon={<Icon
+                      style={{height:46,width:wp('26.5%')}} icon={<Icon
                       name={this.isJobInShortlist(item.id)?'check':'plus-circle'} color='#397af8' size={28}
                       />}
                       title={this.isJobInShortlist(item.id)?' Added':' Shortlist'}
@@ -222,11 +226,11 @@ toShortlist = async (jobId) => {
                     titleStyle={{fontSize:17}}
                     buttonStyle={{backgroundColor:'#66ccff'}}
                     icon={<Icon name='expand' color='white' size={28}/>}
-                    style={{height:46,width:110}}
+                    style={{height:46,width:wp('26.5%')}}
                     title='  Expand'
                     onPress = {()=>this.props.navigation.push('expandJob',{jobId:item.id})}
                     />
-                    <Button titleStyle={{fontSize:17}} style={{color:'white', height:46,width:110}} onPress={() => Linking.openURL(item.link)}
+                    <Button titleStyle={{fontSize:17}} style={{color:'white', height:46,width:wp('26.5%')}} onPress={() => Linking.openURL(item.link)}
                     icon={<Icon name='id-card' color='white' size={28}/>} title=' Apply!'/>
                   </View>
                 </View>

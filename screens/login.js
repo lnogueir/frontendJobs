@@ -1,7 +1,8 @@
 import React, {Component} from 'react';
-import {AsyncStorage,ActivityIndicator, TextInput,Alert,
-  Linking,TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,Text,
-  View,Image,StyleSheet} from 'react-native';
+import {AsyncStorage,ActivityIndicator, TextInput,Alert,TouchableWithoutFeedback,Keyboard,
+  Linking,TouchableHighlight,TouchableOpacity
+  ,FlatList,AppRegistry,KeyboardAvoidingView,
+  ScrollView,Text,View,Image,StyleSheet} from 'react-native';
 import {NavigationActions,StackActions,createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
 import {CheckBox,ThemeProvider,Button,Header} from 'react-native-elements';
 import {LinearGradient} from 'expo';
@@ -86,7 +87,8 @@ class loginPage extends React.Component{
 
   render(){
     return (
-    <View style={{flex:1}}>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+    <KeyboardAvoidingView behavior='padding' style={{justifyContent:'flex-end'}}>
       <View style={{flexDirection:'column',justifyContent:'space-between'}}>
         <View style={{alignItems:'center',justifyContent:'center',marginVertical:'19%'}}>
           <View style={styles.headerStyle}>
@@ -106,13 +108,19 @@ class loginPage extends React.Component{
         </View>
         <View style={styles.login}>
           <TextInput
+          returnKeyType={'next'}
           clearButtonMode='while-editing'
           style={{height:45,borderBottomWidth:2,borderColor:'gray',width:270,padding:7}}
           placeholder='Username'
           onChangeText={(text) => this.setState({username:text})}
           value={this.state.username}
+          onSubmitEditing={()=>this.passwordInput.focus()}
+          blurOnSubmit={false}
           />
           <TextInput
+          returnKeyType={'go'}
+          onSubmitEditing={()=>this.handleLogin()}
+          ref={(input)=>{this.passwordInput = input}}
           clearButtonMode='while-editing'
           secureTextEntry={true}
           style={{height:45,borderBottomWidth:2,borderColor:'gray',width:270,padding:7}}
@@ -135,6 +143,7 @@ class loginPage extends React.Component{
             <Text style={{color:'red'}}>{this.state.error}</Text>
           </View>
 
+
           <Button buttonStyle={{margin:30}} onPress={() => {this.props.navigation.navigate('signupPage')}} icon={
             <Icon
               name='user-circle'
@@ -145,7 +154,8 @@ class loginPage extends React.Component{
             style={{marginTop:'9%'}} title='  Or create account'
             />
       </View>
-    </View>
+    </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 }
 

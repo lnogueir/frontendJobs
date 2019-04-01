@@ -6,10 +6,13 @@ import {NavigationEvents,createStackNavigator,createBottomTabNavigator, createAp
 import {ThemeProvider,Button,Header} from 'react-native-elements';
 import {LinearGradient} from 'expo';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-// import Icon from 'react-native-vector-icons';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+  listenOrientationChange as loc,
+  removeOrientationListener as rol
+} from 'react-native-responsive-screen';
 import helpers from '../globalFunctions.js';
-
 import shortListPage from './shortlist.js';
 import loginPage from './login.js';
 import signupPage from './signup.js';
@@ -42,7 +45,7 @@ class findPage extends React.Component{
 
   static navigationOptions = ({navigation}) => {
     return {
-      headerLeft:<Button onPress={()=>navigation.navigate('Home')} title=' Search' type='clear' icon={<Icon name='chevron-left' color='#397af8' size={28}/>}/>,
+      headerLeft:<Button style={{width:wp('24%')}} onPress={()=>navigation.navigate('Home')} title=' Search' type='clear' icon={<Icon name='chevron-left' color='#397af8' size={28}/>}/>,
       title: 'Results for "'+navigation.getParam('searchKey','Invalid Input')+'":',
     }
   }
@@ -184,14 +187,6 @@ class findPage extends React.Component{
 
     isJobInShortlist = (id) => {
       return this.state.shortlist[id]==id
-      // let found = false
-      // for(var i = this.state.shortlist.length-1;i>=0;i--){
-      //   if(this.state.shortlist[i][0].id==id){
-      //     found = true
-      //     break;
-      //   }
-      // }
-      // return found
     }
 
 
@@ -224,7 +219,7 @@ class findPage extends React.Component{
             <Button onPress ={() => {this.toShortlist(item.id)}}
               titleStyle={{fontSize:17}}
               disabled={this.isJobInShortlist(item.id)}
-              style={{height:46,width:110}} icon={<Icon
+              style={{height:46,width:wp('26.5%')}} icon={<Icon
               name={this.isJobInShortlist(item.id)?'check':'plus-circle'} color='#397af8' size={28}
               />}
               title={this.isJobInShortlist(item.id)?' Added':' Shortlist'}
@@ -234,11 +229,11 @@ class findPage extends React.Component{
             titleStyle={{fontSize:17}}
             buttonStyle={{backgroundColor:'#66ccff'}}
             icon={<Icon name='expand' color='white' size={28}/>}
-            style={{height:46,width:110}}
+            style={{height:46,width:wp('26.5%')}}
             title='  Expand'
             onPress = {()=>this.props.navigation.push('expandJob',{jobId:item.id})}
             />
-            <Button style={{color:'white', height:46,width:110}} onPress={() => Linking.openURL(item.link)}
+            <Button style={{color:'white', height:46,width:wp('26.5%')}} onPress={() => Linking.openURL(item.link)}
             titleStyle={{fontSize:17}}
             icon={<Icon name='id-card' color='white' size={28}/>} title=' Apply!'/>
             </View>
