@@ -8,11 +8,19 @@ import {LinearGradient} from 'expo';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 // import Icon from 'react-native-vector-icons';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import MatIcon from 'react-native-vector-icons/MaterialIcons';
+import MatIcon2 from 'react-native-vector-icons/MaterialCommunityIcons';
 import helpers from '../globalFunctions.js';
 
 import shortListPage from './shortlist.js';
 import loginPage from './login.js';
 import signupPage from './signup.js';
+import {widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+  listenOrientationChange as loc,
+  removeOrientationListener as rol
+} from 'react-native-responsive-screen';
+
 
 const IP = "http://192.168.0.16" //faculdade
 // const IP = //minha casa
@@ -23,24 +31,173 @@ class expandJob extends React.Component{
   constructor(props){
     super(props);
     this.state={
-      email:null,
-      jobId:this.props.navigation.getParam('jobId','Invalid job')
+      userid:this.props.navigation.getParam('userid','Invalid userid'),
+      job:this.props.navigation.getParam('job','Invalid job'),
+      shortlist:{},
+      displayFooter:this.props.navigation.getParam('display','Invalid display'),
+      daysPosted: null
     };
 
 
+    //HOW TO DEAL WITH DATES:
+    // var date1 = new Date('December 27, 1999 23:15:00'); //Current Date
+    // var date2 = new Date('December 25, 1999 23:15:00'); //Current Date
+    // var curDate = new Date(Date())
+    // var jobDate = new Date('Tue Apr 02 2019 23:00:42 GMT-0400 (Eastern Daylight Time)')
+    // var jobDate2 = new Date(this.state.job.date_post)
+    // console.log(jobDate2)
+    // console.log(curDate)
+    // // console.log(Date())
+    // console.log(Math.floor((curDate - jobDate2)/(1000*60*60*24)))
   }
+
+  static navigationOptions = ({navigation}) => {
+    return {
+      title: 'Job Page'
+    }
+  }
+
+
+  getDaysPosted = () => {
+    var curDate = new Date(Date())
+    var postedDate = new Date(this.state.job.date_post)
+    this.setState({daysPosted:Math.floor((curDate - postedDate)/(1000*60*60*24))})
+  }
+
+  componentDidMount = () => {
+    this._isMounted = true
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
+  }
+
+  populateShortlist = async () => {
+    let url = IP+':3000/api/Shortlists/userID?q='+this.state.userid;
+    await fetch(url)
+    .then((response)=>response.json())
+    .then((responseJson)=>{
+        let url = IP+':3000/api/indeed-jobs/jobsArray'
+        try{
+            this.timer = fetch(url,{
+            method:'POST',
+            headers:{
+              'Accept':'application/json',
+              'Content-Type':'application/json',
+            },
+            body:JSON.stringify(responseJson.jobsforUserID)
+          }).then((jobResponse)=>jobResponse.json())
+            .then((finalResponse)=>{
+              if(this._isMounted){
+                let tempDic={}
+                for(var i=0;i<finalResponse.jobs.length;i++){
+                  // console.log(finalResponse.jobs[i])
+                  tempDic[finalResponse.jobs[i][0].id]= finalResponse.jobs[i][0].id
+                }
+                this.setState({shortlist:tempDic})
+                // this.setState({shortlist:finalResponse.jobs})
+               }
+              // console.log(this.state.shortlist[0][0].title)
+            })
+          return responseJson.result;
+        }catch(error){
+          console.log(error)
+        }
+      }
+    );
+  }
+
+  toShortlist = async (jobId) => {
+    let userData = {
+       jobID:jobId,
+       userID:this.state.userid
+     }
+     var url = IP+':3000/api/Shortlists/addShortList'
+     try{
+       let response = await fetch(url,{
+         method:'POST',
+         headers:{
+           'Accept':'application/json',
+           'Content-Type':'application/json',
+         },
+         body:JSON.stringify(userData)
+       });
+       let responseJson = await response.json();
+       if(responseJson.error!=undefined){
+         alert("Sorry, something went wrong")
+       }else{
+         let tempDic = {}
+         tempDic[jobId] = jobId
+         this.setState({shortlist:{...this.state.shortlist,...tempDic}})
+         // console.log(this.state.shortlist)
+         // this.populateShortlist()
+       }
+       return responseJson.result;
+     }catch(error){
+       console.log(error)
+     }
+  }
+
+    isJobInShortlist = (id) => {
+      return this.state.shortlist[id]==id
+    }
+
+    addFooter = () => {
+      return(
+        <View style={{height:'3%',borderTopWidth:1,borderColor:'gray'}}></View>
+      );
+    }
+
 
   render(){
     return(
-      <KeyboardAvoidingView enabled behavior='padding' style={{flex:1, justifyContent:'flex-end',alignItems:'center'}}>
-        <Text style={{margin:5,fontSize:23}}> Email:  </Text>
-          <TextInput
-          style={{height:40,borderWidth:2,borderColor:'gray',width:230,padding:7}}
-          placeholder='example@email.com'
-          onChangeText={(text) => this.setState({email:text})}
-          value={this.state.email}
+      <View style={{flex:1,height:hp('100%')}}>
+      <NavigationEvents
+      onWillFocus={payload=>{
+        this.populateShortlist()
+        this.getDaysPosted()
+      }}
+      />
+        <View style={{alignItems:'center'}}>
+          <Text style={[styles.jobTitle,{backgroundColor:helpers.getBackgroundColor(0)}]}>{this.state.job.title}</Text>
+          <Button disabled disabledStyle={{backgroundColor:'#397af8'}}
+          disabledTitleStyle={{color:'white',fontWeight:'bold',fontSize:17}}
+          icon={<Ionicons name='md-business' size={35} color='white'/>}
+           style={{width:wp('87%')}} title={true?' Company | '+this.state.job.company:null}/>
+        </View>
+        <View style={{marginTop:10,justifyContent:'space-evenly',marginLeft:10,marginRight:15,alignItems:'center',flexDirection:'row',width:wp('95%')}}>
+          <Button disabledTitleStyle={{color:'white',fontSize:17}} disabledStyle={{backgroundColor:'orange'}} disabled icon={<MatIcon2 name='map-marker-radius' size={35} color='olive'/>} title={true?this.state.job.location:null} style={{height:hp('7%'),width:wp('41%')}}/>
+          <Button disabledTitleStyle={{color:'white',fontSize:16}} disabledStyle={{backgroundColor:'orange'}} disabled style={{height:hp('7%'),width:wp('41%')}} icon={<Icon name='dollar' size={38} color='olive'/>} title={this.state.job.salary==''?'  Not specified':this.state.job.salary}/>
+        </View>
+        <View style={{alignItems:'center'}}>
+          <Button disabled disabledTitleStyle={{color:'black'}}
+          icon={<MatIcon name='date-range' size={35} color='black'/>}
+           style={{width:wp('87%')}} title={true?' Posted '+this.state.daysPosted+' days ago':null}/>
+        </View>
+        <View style={{justifyContent:'center',alignItems:'center',margin:5}}>
+          <Text style={[styles.jobTitle,{backgroundColor:helpers.getBackgroundColor(1),fontSize:24}]}>What you will do:</Text>
+        </View>
+        <ScrollView>
+          <View style={{width:wp('95%'),justifyContent:'center',alignItems:'center'}}>
+            <Text style={styles.textStyle}>{this.state.job.text==''?this.state.job.summary:this.state.job.text}</Text>
+          </View>
+        </ScrollView>
+        <View style={{flexDirection:'row',justifyContent:'space-evenly',width:'100%'}}>
+          <Button onPress ={() => {this.toShortlist(this.state.job.id)}}
+            titleStyle={{fontSize:17}}
+            disabled={this.isJobInShortlist(this.state.job.id)}
+            style={{height:46,width:wp('43%')}} icon={<Icon
+            name={this.isJobInShortlist(this.state.job.id)?'check':'plus-circle'} color='#397af8' size={28}
+            />}
+            title={this.isJobInShortlist(this.state.job.id)?' Added':' Shortlist'}
+            type='outline'
           />
-      </KeyboardAvoidingView>
+          <Button titleStyle={{fontSize:17}} style={{color:'white', height:46,width:wp('43%')}} onPress={() => Linking.openURL(this.state.job.link)}
+          icon={<Icon name='id-card' color='white' size={28}/>} title=' Apply!'/>
+        </View>
+        {this.state.displayFooter?this.addFooter():null}
+
+      </View>
     )
   }
 
@@ -50,6 +207,14 @@ class expandJob extends React.Component{
 export default expandJob;
 
 const styles = StyleSheet.create({
+  textStyle:{
+    marginLeft:'5%',
+    padding:10,
+    fontFamily:'Avenir',
+    overflow:'hidden',
+    backgroundColor:'whitesmoke',
+    borderRadius:20
+  },
   container:{
     flex:1,
     flexDirection:'column',
@@ -95,10 +260,11 @@ const styles = StyleSheet.create({
   jobTitle:{
     padding:8,
     color:'white',
-    fontSize:24,
+    fontSize:33,
     fontWeight:'bold',
     fontFamily:'Avenir',
-    width:'100%',
+    margin:'3%',
+    width:wp('87%'),
     paddingTop:5,
     paddingBottom:5,
     borderRadius:7,

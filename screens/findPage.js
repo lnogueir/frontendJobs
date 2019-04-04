@@ -7,7 +7,8 @@ import {ThemeProvider,Button,Header} from 'react-native-elements';
 import {LinearGradient} from 'expo';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import {widthPercentageToDP as wp,
+import {
+  widthPercentageToDP as wp,
   heightPercentageToDP as hp,
   listenOrientationChange as loc,
   removeOrientationListener as rol
@@ -231,7 +232,7 @@ class findPage extends React.Component{
             icon={<Icon name='expand' color='white' size={28}/>}
             style={{height:46,width:wp('26.5%')}}
             title='  Expand'
-            onPress = {()=>this.props.navigation.push('expandJob',{jobId:item.id})}
+            onPress = {()=>this.props.navigation.push('expandJob',{job:item,userid:this.state.userid,display:true})}
             />
             <Button style={{color:'white', height:46,width:wp('26.5%')}} onPress={() => Linking.openURL(item.link)}
             titleStyle={{fontSize:17}}

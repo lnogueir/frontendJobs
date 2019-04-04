@@ -188,7 +188,7 @@ render(){
                 icon={<Icon name='expand' color='white' size={28}/>}
                 style={{height:46,width:wp('26.5%')}}
                 title='  Expand'
-                onPress = {()=>this.props.navigation.push('expandJob',{jobId:item.id})}
+                onPress = {()=>this.props.navigation.push('expandJob',{job:item[0],userid:this.state.userid,display:false})}
                 />
                 <Button style={{color:'white', height:46,width:wp('26.5%')}} onPress={() => Linking.openURL(item[0].link)}
                 icon={<Icon name='id-card' color='white' size={28}/>} title=' Apply!'/>

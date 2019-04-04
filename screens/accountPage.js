@@ -4,6 +4,7 @@ import {AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,
   Text, View,Image,StyleSheet,KeyboardAvoidingView} from 'react-native';
 import {NavigationEvents,NavigationActions,StackActions,createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
 import {CheckBox,ThemeProvider,Button,Header} from 'react-native-elements';
+import Autocomplete from 'react-native-autocomplete-input';
 import {LinearGradient} from 'expo';
 import SLIcon from 'react-native-vector-icons/SimpleLineIcons';
 import MatIcon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -18,6 +19,40 @@ import {widthPercentageToDP as wp,
 
 const IP = "http://192.168.0.16"
 
+const cities = [
+  {
+      id:1,
+      loc:"Toronto, Ontario, CA",
+  },
+  {
+    id:2,
+    loc:"Oakville, Ontario, CA",
+  },
+  {
+      id:3,
+      loc:"Mississauga, Ontario, CA",
+  },
+  {
+      id:4,
+      loc:"Waterloo, Ontario, CA",
+  },
+  {
+    id:5,
+    loc:"Guelph, Ontario, CA",
+  },
+  {
+    id:6,
+    loc:"Windsor, Ontario, CA",
+  },
+  {
+    id:7,
+    loc:"Stratford, Ontario, CA",
+  },
+  {
+    id:8,
+    loc:"Kitchener, Ontario, CA",
+  }
+]
 
 
 class accountPage extends React.Component{
@@ -30,6 +65,7 @@ class accountPage extends React.Component{
       location:null,
       email:null,
       profileID:null,
+      predictions:[]
     };
     this.getUserid();
   }
@@ -94,10 +130,28 @@ class accountPage extends React.Component{
         email:responseJson.profile[0].email,location:responseJson.profile[0].location,profileID:responseJson.profile[0].id}));
     })
   }
+  searchCities = (input) =>{
+  let predictions = []
+  for(var i = 0;i<cities.length;i++){
+    if(cities[i].loc.toLowerCase().indexOf(input.toLowerCase())!=-1 && input!=''){
+        predictions.push(cities[i])
+    }
+  }
+  return predictions;
+  }
+
+  onChangeDestJOB = (loc) =>{
+    this.setState({location:loc})
+    this.setState({predictions:this.searchCities(loc)})
+  }
+
 
   editUserInfo = async () => {
-    let url = IP+":3000/api/profiles/"+this.state.profileID;
+    let url = IP+":3000/api/profiles/updateprofile";
+    console.log(this.state.userid);
     let editInfo = {
+      userID:this.state.userid,
+      profileID:this.state.profileID,
       username:this.state.username,
       email:this.state.email,
       location:this.state.location
@@ -113,6 +167,10 @@ class accountPage extends React.Component{
       });
       let responseJson = await response.json();
       // console.log(responseJson)
+      if(responseJson.error!=undefined){
+        alert("The email or username you have entered already exists. 💩")
+        this.getUserInfo()
+      }
       return responseJson.result;
     }catch(error){
       console.log(error)
@@ -143,7 +201,7 @@ class accountPage extends React.Component{
           <View style={[{backgroundColor:'blue'},styles.innerHeaderStyle]}></View>
         </View>
         <View>
-          <CheckBox textStyle={{fontSize:25,color:this.state.edit?"#397af8":"orange"}} checkedTitle="Save Info" fontFamily='Avenir'
+          <CheckBox textStyle={{fontSize:25,color:this.state.edit?"#397af8":"orange"}} checkedTitle="Save Changes" fontFamily='Avenir'
           center onPress={()=>{
             if(this.state.edit){
               this.editUserInfo();
@@ -157,46 +215,47 @@ class accountPage extends React.Component{
         </View>
         <KeyboardAvoidingView behavior='padding' style={{flex:1,justifyContent:'space-between'}}>
         <View style={styles.entries}>
-            <View style={{marginTop:'3%'}}>
+               <Text style={{margin:5,fontSize:23}}><MatIcon name='map-marker-radius' color='black' size={30}/> Job City:  </Text>
+               <Autocomplete
+                  autoCapitalize="none"
+                  containerStyle={{width:wp('65%'),height:hp('5%')}}
+                  autoCorrect={false}
+                  inputContainerStyle={{paddingLeft:5, borderColor:'gray',borderWidth:2}}
+                  returnKeyType={'done'}
+                  clearButtonMode={this.state.edit?'always':'never'}
+                  editable={this.state.edit}
+                  data={this.state.predictions}
+                  defaultValue={this.state.location}
+                  onChangeText={text => this.onChangeDestJOB(text)}
+                  placeholder='City, Province, Country'
+                  renderItem={({ loc }) => (
+                     <Text style={{padding:7}} onPress={() => this.setState({ location: loc,predictions:[] })}>
+                       {loc}
+                     </Text>
+                   )}
+                 />
                <Text style={{margin:5,fontSize:23}}><Icon name='user-circle' color='black' size={30}/> Username: </Text>
                <TextInput
                returnKeyType={'done'}
                clearButtonMode={this.state.edit?'always':'never'}
-               style={{height:40,borderWidth:2,borderColor:'gray',width:250,padding:7}}
+               style={{height:hp('5%'),borderWidth:2,borderColor:'gray',width:wp('65%'),padding:7}}
                editable={this.state.edit}
                autoFocus={this.state.edit}
                placeholder='Username'
                onChangeText={(text) => this.setState({username:text})}
                value={this.state.username}
                />
-            </View>
-            <View style={{marginTop:'3%'}}>
-                 <Text style={{margin:5,fontSize:23}}><MatIcon name='email' color='black' size={30}/> Email:  </Text>
-                 <TextInput
-                 returnKeyType={'done'}
-                 clearButtonMode={this.state.edit?'always':'never'}
-                 editable={this.state.edit}
-                 // autoFocus={this.state.edit}
-                 style={{height:40,borderWidth:2,borderColor:'gray',width:250,padding:7}}
-                 placeholder='example@email.com'
-                 onChangeText={(text) => this.setState({email:text})}
-                 value={this.state.email}
-                 />
-            </View>
-            <View style={{marginTop:'3%'}}>
-                 <Text style={{margin:5,fontSize:23}}><MatIcon name='map-marker-radius' color='black' size={30}/> Job City:  </Text>
-                 <TextInput
-                 returnKeyType={'done'}
-                 clearButtonMode={this.state.edit?'always':'never'}
-                 // autoFocus={this.state.edit}
-                 editable={this.state.edit}
-                 underlineColorAndroid='gray'
-                 style={{height:40,borderWidth:2,borderColor:'gray',width:250,padding:7}}
-                 placeholder='City, Province, Country'
-                 onChangeText={(text) => this.setState({location:text})}
-                 value={this.state.location}
-                 />
-             </View>
+               <Text style={{margin:5,fontSize:23}}><MatIcon name='email' color='black' size={30}/> Email:  </Text>
+               <TextInput
+               returnKeyType={'done'}
+               clearButtonMode={this.state.edit?'always':'never'}
+               editable={this.state.edit}
+               // autoFocus={this.state.edit}
+               style={{height:hp('5%'),borderWidth:2,borderColor:'gray',width:wp('65%'),padding:7}}
+               placeholder='example@email.com'
+               onChangeText={(text) => this.setState({email:text})}
+               value={this.state.email}
+               />
             <Button style={{marginTop:'5%'}} iconRight icon={<Icon name="chevron-right" color="#397af8" size={30}/>} type="clear" title="Change Password   "/>
           <Button style={{marginTop:'8%'}} type="outline"
           icon={<SLIcon name="logout" color="#397af8" size={33}/>}
@@ -231,10 +290,11 @@ const styles = StyleSheet.create({
     justifyContent:"center",
   },
   entries:{
-    height:'12%',
+    height:hp('50%'),
     marginRight:'15%',
     marginLeft:'15%',
-    flexDirection:'column'
+    flexDirection:'column',
+    justifyContent:'space-evenly',
   },
   headerStyle:{
     // marginTop:'3%',

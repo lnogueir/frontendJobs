@@ -15,10 +15,45 @@ import {widthPercentageToDP as wp,
   listenOrientationChange as loc,
   removeOrientationListener as rol
 } from 'react-native-responsive-screen';
+import Autocomplete from 'react-native-autocomplete-input';
 
 const IP = "http://192.168.0.16"
 // const IP = "http://172.20.10.6"
 
+const cities = [
+  {
+      id:1,
+      loc:"Toronto, Ontario, CA",
+  },
+  {
+    id:2,
+    loc:"Oakville, Ontario, CA",
+  },
+  {
+      id:3,
+      loc:"Mississauga, Ontario, CA",
+  },
+  {
+      id:4,
+      loc:"Waterloo, Ontario, CA",
+  },
+  {
+    id:5,
+    loc:"Guelph, Ontario, CA",
+  },
+  {
+    id:6,
+    loc:"Windsor, Ontario, CA",
+  },
+  {
+    id:7,
+    loc:"Stratford, Ontario, CA",
+  },
+  {
+    id:8,
+    loc:"Kitchener, Ontario, CA",
+  }
+]
 
 
 class signupPage extends React.Component{
@@ -29,7 +64,8 @@ class signupPage extends React.Component{
       checked:false,
       password:null,
       email:null,
-      location:null
+      location:null,
+      predictions:[]
     }
   }
 
@@ -63,6 +99,22 @@ class signupPage extends React.Component{
   }catch(error){
     console.log(error)
   }
+}
+
+
+searchCities = (input) =>{
+let predictions = []
+for(var i = 0;i<cities.length;i++){
+  if(cities[i].loc.toLowerCase().indexOf(input.toLowerCase())!=-1 && input!=''){
+      predictions.push(cities[i])
+  }
+}
+return predictions;
+}
+
+onChangeDestJOB = (loc) =>{
+  this.setState({location:loc})
+  this.setState({predictions:this.searchCities(loc)})
 }
 
   asyncAlert = async () =>{
@@ -118,11 +170,6 @@ class signupPage extends React.Component{
 
   render(){
     return (
-      // <View style={{flex:1,flexDirection:'column',justifyContent:'space-between',alignItems:'center'}}>
-      //  <View style={{backgroundColor:'red',width:50,height:50}}></View>
-      //  <View style={{backgroundColor:'green',width:50,height:50}}></View>
-      //  <View style={{backgroundColor:'blue',width:50,height:50}}></View>
-      // </View>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={{flex:1,height:'100%'}}>
         <View style={{height:'20%',shadowColor:'gray',shadowOpacity:1,shadowRadius:5
@@ -181,28 +228,43 @@ class signupPage extends React.Component{
              onSubmitEditing={()=>this.locationInput.focus()}
              blurOnSubmit={false}
              />
-           <TextInput
-              ref={(input)=>{this.locationInput = input}}
-              returnKeyType={'done'}
-              clearButtonMode='while-editing'
-              style={{height:40,borderWidth:2,borderColor:'gray',
-              width:wp('44%'),padding:10,borderRadius:20}}
-              placeholder='City, Province, Country'
-              onChangeText={(text) => this.setState({location:text})}
-              value={this.state.location}
-
+            <Autocomplete
+               ref={(input)=>{this.locationInput = input}}
+               autoCapitalize="none"
+               returnKeyType={'done'}
+               clearButtonMode='while-editing'
+               containerStyle={{borderWidth:2,borderColor:'gray',borderRadius:20,width:wp('44%'),height:40}}
+               autoCorrect={false}
+               style={{padding:10,backgroundColor:'transparent',borderColor:'transparent'}}
+               inputContainerStyle={{backgroundColor:'transparent',borderColor:'transparent'}}
+               listContainerStyle={{backgroundColor:'white',borderRadius:20}}
+               listStyle={{backgroundColor:'white',borderRadius:20}}
+               returnKeyType={'done'}
+               clearButtonMode={this.state.edit?'always':'never'}
+               editable={this.state.edit}
+               data={this.state.predictions}
+               defaultValue={this.state.location}
+               onChangeText={text => this.onChangeDestJOB(text)}
+               placeholder='City, Province, Country'
+               renderItem={({ loc }) => (
+                 <TouchableOpacity onPress={() => this.setState({ location: loc,predictions:[] })}>
+                  <Text style={{padding:7}}>
+                    {loc}
+                  </Text>
+                </TouchableOpacity>
+                )}
               />
         </View>
-        <View style={{alignItems:'center',justifyContent:'space-evenly',width:'100%',flexDirection:'row'}}>
-        <CheckBox
-         containerStyle={{width:wp('35%')}}
-         checkedIcon='dot-circle-o'
-         uncheckedIcon='circle-o'
-         onPress={()=>this.setState({checked:!this.state.checked})}
-         title='Show my password' checked={this.state.checked}
-          />
-        <Button onPress={() => {this.createAccount()} } style={{width:wp('40%'),alignSelf:'center',marginVertical:'11%'}} type='outline' title='Sign Up'/>
+        <View style={{marginLeft:5, width:wp('50%')}}>
+          <CheckBox
+           containerStyle={{borderRadius:24,width:wp('45%')}}
+           checkedIcon='dot-circle-o'
+           uncheckedIcon='circle-o'
+           onPress={()=>this.setState({checked:!this.state.checked})}
+           title='Show my password' checked={this.state.checked}
+            />
         </View>
+        <Button onPress={() => {this.createAccount()} } style={{width:wp('40%'),alignSelf:'center',marginVertical:'11%'}} type='outline' title='Sign Up'/>
       </View>
       </TouchableWithoutFeedback>
     );

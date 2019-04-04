@@ -228,7 +228,10 @@ toShortlist = async (jobId) => {
                     icon={<Icon name='expand' color='white' size={28}/>}
                     style={{height:46,width:wp('26.5%')}}
                     title='  Expand'
-                    onPress = {()=>this.props.navigation.push('expandJob',{jobId:item.id})}
+                    onPress = {()=>{
+                      // console.log(index)
+                      this.props.navigation.push('expandJob',{job:item,userid:this.state.userid,display:false})
+                    }}
                     />
                     <Button titleStyle={{fontSize:17}} style={{color:'white', height:46,width:wp('26.5%')}} onPress={() => Linking.openURL(item.link)}
                     icon={<Icon name='id-card' color='white' size={28}/>} title=' Apply!'/>
