@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,
+import {Platform,AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,
   TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,Text,
   View,Image,StyleSheet} from 'react-native';
 import {NavigationEvents,createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
@@ -17,8 +17,8 @@ import helpers from '../globalFunctions.js';
 import shortListPage from './shortlist.js';
 import loginPage from './login.js';
 import signupPage from './signup.js';
-
-const IP = "http://192.168.0.16"
+import IP from '../constants/IP.js';
+// const IP = "http://192.168.0.16"
 // const IP = "http://172.20.10.6"
 
 class findPage extends React.Component{
@@ -27,27 +27,49 @@ class findPage extends React.Component{
     super(props);
     _isMounted = false
     this.state={
-      userid:null,
+      userid:'',
       prevPageSize:-1,
       display:true,
-      key:this.props.navigation.getParam('searchKey','Invalid Input'),
+      key:this.props.navigation.getParam('searchKey',null),
+      location:this.props.navigation.getParam('location', null),
       searchData:[],
       refreshing:false,
       page:1,
       shortlist:{},
     };
-    this.populateSearch()
-    this.getUserid()
-    setTimeout(()=>{this.populateShortlist()},0.1)
+    this.isGuest();
   }
 
 
 
 
   static navigationOptions = ({navigation}) => {
+    const search = navigation.getParam('searchKey',null)==null?navigation.getParam('location'):navigation.getParam('searchKey');
+    // console.log(search)
     return {
       headerLeft:<Button style={{width:wp('24%')}} onPress={()=>navigation.navigate('Home')} title=' Search' type='clear' icon={<Icon name='chevron-left' color='#397af8' size={28}/>}/>,
-      title: 'Results for "'+navigation.getParam('searchKey','Invalid Input')+'":',
+      title: 'Results for "'+search+'":',
+    }
+  }
+
+  isGuest = async () => {
+    try {
+      const value = await AsyncStorage.getItem('userid');
+      // console.log(value==null);
+      this.setState({guest:value==null})
+      if(!this.state.guest){
+        this.getUserid()
+        setTimeout(()=>{
+          this.populateShortlist()
+        },1)
+      }
+      setTimeout(()=>{
+        this.populateSearch()
+        // console.log(this.state.userid)
+      },100)
+
+    } catch (error) {
+      // Error retrieving data
     }
   }
 
@@ -157,11 +179,22 @@ class findPage extends React.Component{
       );
     }
 
+
     populateSearch = async () => {
-      let url = IP+":3000/api/searches?q="+this.state.key+"&category=generic&page="+this.state.page
+      let url = this.state.location==null
+      ?
+      IP+":3000/api/searches?q="+this.state.key+"&category=generic&page="+this.state.page+"&userID="+this.state.userid
+      :
+      this.state.key==null
+      ?
+      IP+":3000/api/searches?q="+this.state.location.split(', ')[0]+"&category=location&page="+this.state.page
+      :
+      IP+":3000/api/searches?q="+this.state.key+"&category=generic&page="+this.state.page+"&location="+this.state.location.split(', ')[0]+"&userID="+this.state.userid
+      // console.log(url)
       await fetch(url)
       .then((response)=>response.json())
       .then((responseJson)=>{
+        // console.log(responseJson)
         if(responseJson.jobs.length!=0){
           this.setState(state=>({display:true,prevPageSize:responseJson.jobs.length,refreshing:false,
           searchData:this.state.searchData.concat(responseJson.jobs)}));
@@ -211,13 +244,20 @@ class findPage extends React.Component{
       ListFooterComponent={() => this.state.prevPageSize!=15 ? null : <ActivityIndicator size='large' animating/>}
       renderItem={({item,index}) => (
         <View style={[styles.col,{shadowColor:helpers.getGradientColor(index)}]}>
-          <Text style={[styles.jobTitle,{backgroundColor:helpers.getBackgroundColor(index)}]}>{item.title}</Text>
+          <Text style={[styles.jobTitle,{backgroundColor:helpers.getBackgroundColor(index)}]}>{helpers.capitalize(item.title)}</Text>
           <View style={styles.jobInfo}>
             <Text style={styles.jobInfoText}><Text style={{fontWeight:'bold',fontSize:16}}>Company:</Text> {item.company}</Text>
             <Text style={styles.jobInfoText}><Text style={{fontWeight:'bold',fontSize:16}}>Location:</Text> {item.location}<Text style={{fontWeight:'bold',fontSize:16}}>{'\t'}Salary:</Text> {item.salary}</Text>
             <Text style={styles.jobInfoText}>{'\n'}<Text style={{fontWeight:'bold',fontSize:16}}>Summary:</Text> {item.summary}{'\n'}</Text>
             <View style={{flexDirection:'row',justifyContent:'space-evenly',width:'100%'}}>
-            <Button onPress ={() => {this.toShortlist(item.id)}}
+            <Button onPress ={() => {
+              if(!this.state.guest){
+                  this.toShortlist(item.id)
+              }else{
+                alert("You must create an account in order to have a shortlist.")
+              }
+
+            }}
               titleStyle={{fontSize:17}}
               disabled={this.isJobInShortlist(item.id)}
               style={{height:46,width:wp('26.5%')}} icon={<Icon
@@ -232,7 +272,7 @@ class findPage extends React.Component{
             icon={<Icon name='expand' color='white' size={28}/>}
             style={{height:46,width:wp('26.5%')}}
             title='  Expand'
-            onPress = {()=>this.props.navigation.push('expandJob',{job:item,userid:this.state.userid,display:true})}
+            onPress = {()=>this.props.navigation.push('expandJob',{job:item,userid:this.state.userid/*,display:true*/})}
             />
             <Button style={{color:'white', height:46,width:wp('26.5%')}} onPress={() => Linking.openURL(item.link)}
             titleStyle={{fontSize:17}}
@@ -314,7 +354,6 @@ const styles = StyleSheet.create({
     color:'white',
     fontSize:24,
     fontWeight:'bold',
-    fontFamily:'Avenir',
     width:'100%',
     paddingTop:5,
     paddingBottom:5,

@@ -1,23 +1,28 @@
 import React, {Component} from 'react';
-import {AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,
+import {Platform,AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,
   TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,
   Text, View,Image,StyleSheet,KeyboardAvoidingView} from 'react-native';
 import {NavigationEvents,NavigationActions,StackActions,createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
-import {CheckBox,ThemeProvider,Button,Header} from 'react-native-elements';
+import {Input,CheckBox,ThemeProvider,Button,Header} from 'react-native-elements';
 import Autocomplete from 'react-native-autocomplete-input';
 import {LinearGradient} from 'expo';
 import SLIcon from 'react-native-vector-icons/SimpleLineIcons';
 import MatIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import EntIcon from 'react-native-vector-icons/Entypo'
-// import Icon from 'react-native-vector-icons';
+import AntIcon from 'react-native-vector-icons/AntDesign';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {widthPercentageToDP as wp,
   heightPercentageToDP as hp,
   listenOrientationChange as loc,
   removeOrientationListener as rol
 } from 'react-native-responsive-screen';
+import * as Expo from 'expo'
 
-const IP = "http://192.168.0.16"
+import IP from '../constants/IP.js';
+
+// const IP = "http://192.168.0.16"
+
+
 
 const cities = [
   {
@@ -59,18 +64,129 @@ class accountPage extends React.Component{
   constructor(props){
     super(props);
     this.state = {
+      notifications:false,
       userid:null,
       edit:false,
       username:null,
       location:null,
       email:null,
       profileID:null,
-      predictions:[]
+      predictions:[],
+      tag:null,
+      guest:this.props.navigation.getParam('guest',false),
     };
+    // console.log(this.state.guest);
+    if(this.state.guest){
+      this.props.navigation.navigate('Account',{guest:true})
+      this.props.navigation.navigate('Home')
+      // console.log('here')
+    }
+    // console.log(Expo);
     this.getUserid();
+
+
   }
 
 
+
+
+
+
+  getToken = async () => {
+    // Remote notifications do not work in simulators, only on device
+    if (!Expo.Constants.isDevice) {
+      return;
+    }
+    let { status } = await Expo.Permissions.askAsync(
+      Expo.Permissions.NOTIFICATIONS
+    );
+    if (status !== 'granted') {
+      return;
+    }
+    let token = await Expo.Notifications.getExpoPushTokenAsync();
+    // console.log('Our token', token);
+    let url = IP+":3000/api/notifications/createNotification";
+    // console.log(this.state.userid);
+    let notificationInfo = {
+       userID: this.state.userid,
+       location: this.state.location.split(',')[0],
+       tag:'', // Trocar depois esta poha
+       token: token,
+    }
+    try{
+      let response = await fetch(url,{
+        method:'POST',
+        headers:{
+          'Accept':'application/json',
+          'Content-Type':'application/json',
+        },
+        body:JSON.stringify(notificationInfo)
+      });
+      let responseJson = await response.json();
+      console.log(responseJson)
+      if(responseJson.error!=undefined){
+        alert("Error allowing notification 💩")
+      }
+      return responseJson.result;
+    }catch(error){
+      console.log(error)
+    }
+
+
+  }
+
+
+
+  componentWillUnmount = () => {
+    this.listener && this.listener.remove();
+  }
+
+
+  handleNotification = ({ origin, data }) => {
+    // console.log(
+    //   `Push notification ${origin} with data: ${JSON.stringify(data)}`
+    // );
+    this.props.navigation.navigate('notificationJobsPage',{notificationData:data.jobs})
+  };
+
+
+
+  // isNotificationActive = async () => {
+  //   let url = IP+":3000/api/notifications/userID?q="+this.state.userid;
+  //   await fetch(url)
+  //   .then((response)=>response.json())
+  //   .then((responseJson)=>{
+  //       // console.log(responseJson)
+  //       this.setState({notifications:responseJson.notification.length!=0})
+  //       if(this.state.notifications){
+  //         this.listener = Expo.Notifications.addListener(this.handleNotification);
+  //       }
+  //   })
+  // }
+
+
+
+
+  alertAllowNotifications = async () =>{
+    return new Promise((resolve,reject)=>{
+      Alert.alert(
+        'Allow notifications',
+        'Would you like to receive notifications of new jobs in your area?',
+        [
+          {text:'No', onPress:()=>{resolve('NO')}},
+          {text:'Yes',onPress:async()=>{
+            await this.getUserInfo();
+            this.getToken();
+            await AsyncStorage.setItem('notification', 'true');
+            this.listener = Expo.Notifications.addListener(this.handleNotification);
+            this.props.navigation.navigate('notificationPage')
+            resolve('YES')
+          }},
+        ],
+        {cancelable:false}
+      )
+    })
+  }
 
   getUserid = async () => {
    try {
@@ -116,18 +232,16 @@ class accountPage extends React.Component{
    })
  }
 
-  _signOutAsync = async () => {
-    await AsyncStorage.clear();
-    this.props.navigation.navigate('AuthLoading');
-  };
 
   getUserInfo = async () =>{
     let url = IP+":3000/api/profiles/userID?q="+this.state.userid;
     await fetch(url)
     .then((response)=>response.json())
     .then((responseJson)=>{
+        // console.log(responseJson)
         this.setState(state=>({username:responseJson.profile[0].username,
-        email:responseJson.profile[0].email,location:responseJson.profile[0].location,profileID:responseJson.profile[0].id}));
+        email:responseJson.profile[0].email,location:responseJson.profile[0].location,
+        profileID:responseJson.profile[0].id,tag:responseJson.profile[0].tag}));
     })
   }
   searchCities = (input) =>{
@@ -148,13 +262,14 @@ class accountPage extends React.Component{
 
   editUserInfo = async () => {
     let url = IP+":3000/api/profiles/updateprofile";
-    console.log(this.state.userid);
+    // console.log(this.state.userid)
     let editInfo = {
       userID:this.state.userid,
       profileID:this.state.profileID,
       username:this.state.username,
       email:this.state.email,
-      location:this.state.location
+      location:this.state.location,
+      tag:this.state.tag
     }
     try{
       let response = await fetch(url,{
@@ -170,6 +285,23 @@ class accountPage extends React.Component{
       if(responseJson.error!=undefined){
         alert("The email or username you have entered already exists. 💩")
         this.getUserInfo()
+      }else{
+        url = IP+":3000/api/notifications/updateNotification";
+        let updatedInfo = {
+          userID:this.state.userid,
+          location:this.state.location.split(',')[0],
+          tag:this.state.tag
+        }
+        let finalResponse = await fetch(url,{
+          method:'POST',
+          headers:{
+            'Accept':'application/json',
+            'Content-Type':'application/json',
+          },
+          body:JSON.stringify(updatedInfo)
+        });
+        responseJson = await finalResponse.json()
+        console.log(responseJson)
       }
       return responseJson.result;
     }catch(error){
@@ -177,99 +309,159 @@ class accountPage extends React.Component{
     }
   }
 
+  allowNotifications = () =>{
+      this.getToken();
+      this.listener = Expo.Notifications.addListener(this.handleNotification);
+  }
+
+  unallowNotifications = async () =>{
+    let url = IP+":3000/api/notifications/deleteuserID?q="+this.state.userid;
+    await fetch(url)
+    .then((response)=>response.json())
+    .then((responseJson)=>{
+        // console.log(responseJson)
+    })
+  }
+
+  _signOutAsync = async () => {
+    await AsyncStorage.clear();
+    this.unallowNotifications()
+    this.props.navigation.navigate('AuthLoading');
+  };
+
+
   render() {
     return(
       <View style={{flex:1, height:'100%'}}>
         <NavigationEvents
         onDidFocus={payload=>{
-          if(!this.state.edit){
-            setTimeout(()=>{this.getUserInfo()},1)
+          if(!this.state.edit && !this.state.guest){
+            setTimeout(()=>{
+              this.getUserInfo()
+              // this.isNotificationActive()
+            },1)
           }
         }}
         onWillBlur={payload=>{
           if(this.state.edit){
-            this.props.navigation.navigate('Account')
+            this.props.navigation.navigate('accountPage')
             this.callAlertNavigate(payload.action.routeName)
           }
+          this.setState({edit:false})
         }}
         />
-        <View style={{height:'20%',shadowColor:'gray',shadowOpacity:1,shadowRadius:5
-        ,flexDirection:'row',justifyContent:'space-evenly',
-        alignItems:'center'}}>
-          <View style={[{backgroundColor:'red'},styles.innerHeaderStyle]}></View>
-          <View style={[{backgroundColor:'green'},styles.innerHeaderStyle]}></View>
-          <View style={[{backgroundColor:'blue'},styles.innerHeaderStyle]}></View>
-        </View>
-        <View>
-          <CheckBox textStyle={{fontSize:25,color:this.state.edit?"#397af8":"orange"}} checkedTitle="Save Changes" fontFamily='Avenir'
-          center onPress={()=>{
+      <Header
+        barStyle="light-content"
+        leftComponent={
+        <Button onPress={()=>{
+            this.getUserInfo()
+            this.setState({edit:false})
+        }}
+        disabled={!this.state.edit} disabledStyle={{backgroundColor:'transparent'}} disabledTitleStyle={{color:'transparent'}}
+        type='clear'  title='Cancel'/>
+        }
+        centerComponent={{text:'Account',style:{color:'black',fontWeight:'bold',fontSize:18}}}
+        rightComponent={<Button icon={!this.state.edit?<EntIcon name='edit'color="#397af8" size={20}/>:<EntIcon name='save'color="#397af8" size={20}/>}
+        onPress={()=>{
             if(this.state.edit){
               this.editUserInfo();
             }
             this.setState({edit:!this.state.edit})
-          }}
-          uncheckedIcon={<EntIcon name='edit'color="orange" size={30}/>}
-          checkedIcon={<EntIcon name='save'color="#397af8" size={30}/>}
-          checked={this.state.edit} title="Edit Info"
+        }}
+        type='clear' title={!this.state.edit?'Edit':'Save'}/>}
+        containerStyle={{
+          backgroundColor: 'white',
+          justifyContent: 'space-around',
+        }}
+      />
+      <View style={{marginTop:7,height:'13%',shadowColor:'gray',shadowOpacity:1,shadowRadius:5
+      ,flexDirection:'row',justifyContent:'space-evenly',
+      alignItems:'center'}}>
+        <View style={[{backgroundColor:'red'},styles.innerHeaderStyle]}></View>
+        <View style={[{backgroundColor:'green'},styles.innerHeaderStyle]}></View>
+        <View style={[{backgroundColor:'blue'},styles.innerHeaderStyle]}></View>
+      </View>
+      <View style={{ alignItems:'center',flexDirection:'column', justifyContent:'space-evenly',
+      width:wp('100%'),height:hp('33%'),marginTop:10}}>
+        <View style={{flexDirection:'column',zIndex:1}}>
+          <Text style={{fontSize:21}}><MatIcon name='map-marker-radius' color='black' size={30}/>Looking for a <Text style={{fontWeight:'bold',color:'red'}}>J</Text><Text style={{fontWeight:'bold',color:'green'}}>O</Text><Text style={{fontWeight:'bold',color:'blue'}}>B</Text> in...</Text>
+          <Autocomplete
+             containerStyle={{width:wp('90%')}}
+             autoCorrect={false}
+             listStyle={{maxHeight:120}}
+             onBlur={()=>this.setState({predictions:[]})}
+             inputContainerStyle={{paddingLeft:5, borderColor:'gray',borderWidth:2}}
+             returnKeyType={'done'}
+             clearButtonMode={this.state.edit?'always':'never'}
+             editable={this.state.edit}
+             data={this.state.predictions}
+             defaultValue={this.state.location}
+             onChangeText={text => this.onChangeDestJOB(text)}
+             placeholder='City, Province, Country'
+             renderItem={({ loc }) => (
+                <Text style={{padding:7}} onPress={() => this.setState({ location: loc,predictions:[] })}>
+                  {loc}
+                </Text>
+              )}
+            />
+        </View>
+        <Input
+          returnKeyType={'done'}
+          clearButtonMode={this.state.edit?'always':'never'}
+          editable={this.state.edit}
+          autoFocus={this.state.edit}
+          onChangeText={(text) => this.setState({username:text})}
+          value={this.state.username}
+          containerStyle={{width:wp('90%')}} inputStyle={{padding:7}}
+          leftIcon={<Icon name='user-circle' color='black' size={30}/>}
+          placeholder='Username'
           />
-        </View>
-        <KeyboardAvoidingView behavior='padding' style={{flex:1,justifyContent:'space-between'}}>
-        <View style={styles.entries}>
-               <Text style={{margin:5,fontSize:23}}><MatIcon name='map-marker-radius' color='black' size={30}/> Job City:  </Text>
-               <Autocomplete
-                  autoCapitalize="none"
-                  containerStyle={{width:wp('65%'),height:hp('5%')}}
-                  autoCorrect={false}
-                  inputContainerStyle={{paddingLeft:5, borderColor:'gray',borderWidth:2}}
-                  returnKeyType={'done'}
-                  clearButtonMode={this.state.edit?'always':'never'}
-                  editable={this.state.edit}
-                  data={this.state.predictions}
-                  defaultValue={this.state.location}
-                  onChangeText={text => this.onChangeDestJOB(text)}
-                  placeholder='City, Province, Country'
-                  renderItem={({ loc }) => (
-                     <Text style={{padding:7}} onPress={() => this.setState({ location: loc,predictions:[] })}>
-                       {loc}
-                     </Text>
-                   )}
-                 />
-               <Text style={{margin:5,fontSize:23}}><Icon name='user-circle' color='black' size={30}/> Username: </Text>
-               <TextInput
-               returnKeyType={'done'}
-               clearButtonMode={this.state.edit?'always':'never'}
-               style={{height:hp('5%'),borderWidth:2,borderColor:'gray',width:wp('65%'),padding:7}}
-               editable={this.state.edit}
-               autoFocus={this.state.edit}
-               placeholder='Username'
-               onChangeText={(text) => this.setState({username:text})}
-               value={this.state.username}
-               />
-               <Text style={{margin:5,fontSize:23}}><MatIcon name='email' color='black' size={30}/> Email:  </Text>
-               <TextInput
-               returnKeyType={'done'}
-               clearButtonMode={this.state.edit?'always':'never'}
-               editable={this.state.edit}
-               // autoFocus={this.state.edit}
-               style={{height:hp('5%'),borderWidth:2,borderColor:'gray',width:wp('65%'),padding:7}}
-               placeholder='example@email.com'
-               onChangeText={(text) => this.setState({email:text})}
-               value={this.state.email}
-               />
-            <Button style={{marginTop:'5%'}} iconRight icon={<Icon name="chevron-right" color="#397af8" size={30}/>} type="clear" title="Change Password   "/>
-          <Button style={{marginTop:'8%'}} type="outline"
-          icon={<SLIcon name="logout" color="#397af8" size={33}/>}
-          onPress={()=>{
-          if(this.state.edit){
-              this.callAlertLogout()
+        <Input
+          returnKeyType={'done'}
+          clearButtonMode={this.state.edit?'always':'never'}
+          editable={this.state.edit}
+          onChangeText={(text) => this.setState({email:text})}
+          value={this.state.email}
+          inputStyle={{padding:7}} containerStyle={{width:wp('90%')}}
+          placeholder='example@email.com' leftIcon={<MatIcon name='email' color='black' size={30}/>}
+          />
+        <Input
+          returnKeyType={'done'}
+          clearButtonMode={this.state.edit?'always':'never'}
+          editable={this.state.edit}
+          onChangeText={(text) => this.setState({tag:text})}
+          value={this.state.tag}
+          inputStyle={{padding:7}} containerStyle={{width:wp('90%')}}
+          placeholder='Example tag: Summer' leftIcon={<AntIcon name='tags' color="black" size={30}/>}
+        />
+      </View>
+      <View style={{flexDirection:'row',height:hp('8%'),width:wp('93%'),justifyContent:'space-evenly',alignItems:'center'}}>
+        <Button buttonStyle={{width:wp('45%')}} type='clear' title='Notifications'
+        onPress={async ()=>{
+          const permission = await AsyncStorage.getItem('notification')
+          if(permission=='true'){
+            this.props.navigation.navigate('notificationPage')
           }else{
-              this._signOutAsync()
+            await this.alertAllowNotifications()
           }
+        }}
+        />
+        <Button buttonStyle={{width:wp('45%')}} type="clear" title="Change Password"/>
+      </View>
+      <View style={{alignItems:'center',height:hp('15%'),width:wp('100%'),justifyContent:'center'}}>
+        <Button buttonStyle={{width:wp('75%')}} type="outline"
+        icon={<SLIcon name="logout" color="#397af8" size={33}/>}
+        onPress={()=>{
+        if(this.state.edit){
+            this.callAlertLogout()
+        }else{
+            this._signOutAsync()
+        }
 
-          }}
-          title='   Sign out'/>
-        </View>
-        </KeyboardAvoidingView>
+        }}
+        title='   Sign out'/>
+      </View>
+
       </View>
     );
   }
@@ -283,6 +475,16 @@ export default accountPage;
 
 
 const styles = StyleSheet.create({
+  autocompleteContainer: {
+    flexDirection:'column',
+    marginTop:10,
+    flex: 1,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 1
+  },
   container:{
     flex:1,
     flexDirection:'column',
@@ -331,7 +533,6 @@ const styles = StyleSheet.create({
     color:'white',
     fontSize:22,
     fontWeight:'bold',
-    fontFamily:'Avenir',
     width:'100%',
     paddingTop:5,
     paddingBottom:5,

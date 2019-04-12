@@ -7,6 +7,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 // import Icon from 'react-native-vector-icons';
 import MatIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import EntIcon from 'react-native-vector-icons/Entypo';
 import helpers from './globalFunctions.js';
 
 import shortListPage from './screens/shortlist.js';
@@ -18,6 +19,54 @@ import Home from './screens/searchHome.js';
 import accountPage from './screens/accountPage.js';
 import AuthLoadingScreen from './screens/authloadingScreen.js';
 import expandJob from './screens/expandJob.js';
+import notificationJobsPage from './screens/notificationJobs.js';
+import notificationPage from './screens/notificationPage.js';
+
+
+
+
+
+async function isGuest(){
+  try {
+    const value = await AsyncStorage.getItem('userid');
+    // console.log(value==null);
+    return value==null;
+    // GUEST = value==null;
+  } catch (error) {
+    // Error retrieving data
+  }
+}
+
+
+
+
+const notificationJobsExpandStack = createStackNavigator(
+  {
+    notificationJobsPage:{screen:notificationJobsPage,navigationOptions:{
+        title:'New Jobs'
+      }},
+      expandJob:{screen:expandJob}
+    },{
+        navigationOptions:{
+          header:null
+        }
+      }
+);
+
+notificationJobsExpandStack.navigationOptions = ({navigation})=>{
+  return{
+    tabBarVisible:navigation.state.index===0,
+  }
+}
+
+accountNotificationStack = createStackNavigator(
+    {
+      notificationPage:{screen:notificationPage,navigationOptions:{
+        title:'Notifications'
+      }},
+      notificationJobs:{screen:notificationJobsExpandStack}
+    }
+)
 
 
 const jobExpandStack = createStackNavigator(
@@ -27,7 +76,13 @@ const jobExpandStack = createStackNavigator(
       headerForceInset:{top:'never',bottom:'never'}}},
     expandJob:{screen:expandJob}
   }
-)
+);
+
+jobExpandStack.navigationOptions = ({ navigation }) => {
+  return {
+    tabBarVisible: navigation.state.index === 0,
+  };
+};
 
 const findExpandStack = createStackNavigator(
   {
@@ -38,7 +93,15 @@ const findExpandStack = createStackNavigator(
       header:null
     }
   }
-)
+);
+findExpandStack.navigationOptions = ({ navigation }) => {
+  return {
+    tabBarVisible: navigation.state.index === 0,
+  };
+};
+
+
+
 
 const shortlistExpandStack = createStackNavigator(
   {
@@ -47,7 +110,35 @@ const shortlistExpandStack = createStackNavigator(
       headerForceInset:{top:'never',bottom:'never'}}},
     expandJob:{screen:expandJob}
   }
+);
+shortlistExpandStack.navigationOptions = ({ navigation }) => {
+  return {
+    tabBarVisible: navigation.state.index === 0,
+  };
+};
+
+
+const accountPageStack = createStackNavigator(
+  {
+    accountPage:{screen:accountPage,navigationOptions:{
+      headerStyle:{height:0},
+      headerForceInset:{top:'never',bottom:'never'}
+    }},
+    notificationPage:{screen:accountNotificationStack,navigationOptions:{
+      headerStyle:{height:0},
+      headerForceInset:{top:'never',bottom:'never'}}},
+    notificationJobsPage:{screen:notificationJobsExpandStack,navigationOptions:{
+      headerStyle:{height:0},
+      headerForceInset:{top:'never',bottom:'never'}}}
+  }
 )
+
+
+accountPageStack.navigationOptions = ({ navigation }) => {
+  return {
+    tabBarVisible: navigation.state.index === 0,
+  };
+};
 
 
 const homeFindStack = createStackNavigator(
@@ -55,10 +146,13 @@ const homeFindStack = createStackNavigator(
     Home:{screen:Home,navigationOptions:{
       headerStyle:{height:0},
       headerForceInset:{top:'never',bottom:'never'}}},
-    findPage:{screen:findExpandStack},
-  },
-
-
+    findPage:{screen:findExpandStack,navigationOptions:{
+      headerStyle:{height:0},
+      headerForceInset:{top:'never',bottom:'never'}}},
+    notificationJobsPage:{screen:notificationJobsExpandStack,navigationOptions:{
+      headerStyle:{height:0},
+      headerForceInset:{top:'never',bottom:'never'}}}
+    },
 
 );
 
@@ -67,6 +161,9 @@ homeFindStack.navigationOptions = ({ navigation }) => {
     tabBarVisible: navigation.state.index === 0,
   };
 };
+
+
+
 
 
 const MainStack = createBottomTabNavigator(
@@ -81,9 +178,6 @@ const MainStack = createBottomTabNavigator(
       )
     })},
     Jobs: {screen: jobExpandStack,navigationOptions:({navigation})=>({
-      // tabBarOnPress:()=>{
-      //
-      //   navigation.navigate('Jobs')},
       tabBarIcon:({tintColor}) => (
         <Icon
         name="briefcase"
@@ -94,6 +188,15 @@ const MainStack = createBottomTabNavigator(
     })},
     Shortlist:{screen:shortlistExpandStack,
     navigationOptions:()=>({
+      tabBarOnPress:async ({navigation})=>{
+        const GUEST =  await isGuest();
+        // console.log(GUEST)
+        if(GUEST){
+          alert("You are logged as a guest. Create an account to use shortlist page.")
+        }else{
+          navigation.navigate('Shortlist');
+        }
+      },
       tabBarIcon:({tintColor}) => (
         <Icon
         name= "edit"/*"thumb-tack"*/
@@ -101,18 +204,47 @@ const MainStack = createBottomTabNavigator(
         size={26}
         />
       )
+
     })},
-    Account:{screen:accountPage,navigationOptions:()=>({
-      tabBarIcon:({tintColor})=>(
-        <MatIcon
-        name='account'
-        color={tintColor}
-        size={32}
-        />
-      )
-    })},
+    Account:{screen:accountPageStack,navigationOptions:({navigation})=>{
+      // const GUEST = await isGuest();
+      // console.log(GUEST,"FORA DA FUNCAO"),
+      // navigation.navigate('accountPage',{guest:true})
+      return {
+        tabBarLabel:navigation.getParam('guest',false)?'Sign In':'Profile',
+        tabBarIcon:({tintColor})=>
+          !navigation.getParam('guest',false)?
+          (
+            <MatIcon
+            name='account'
+            color={tintColor}
+            size={32}
+            />
+        ):
+        (
+          <EntIcon
+          name="back"
+          color={tintColor}
+          size={32}
+          />
+        ),
+      tabBarOnPress:async({navigation})=>{
+        const GUEST = await isGuest();
+        if(GUEST){
+          navigation.navigate('Login');
+        }else{
+          navigation.navigate('Account');
+        }
+      },
+    }
+
+  }
+},
   },{tabBarOptions:{
     // showLabel:false,
+    labelStyle:{
+      fontSize:13,
+    },
     iconStyle:{
       paddingRight:50
     }
@@ -195,7 +327,6 @@ const styles = StyleSheet.create({
     color:'white',
     fontSize:24,
     fontWeight:'bold',
-    fontFamily:'Avenir',
     width:'100%',
     paddingTop:5,
     paddingBottom:5,

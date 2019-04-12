@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
-import {AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,Text, View,Image,StyleSheet} from 'react-native';
+import {Platform,AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,Text, View,Image,StyleSheet} from 'react-native';
 import {NavigationEvents,createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
-import {ThemeProvider,Button,Header} from 'react-native-elements';
+import {Input,ThemeProvider,Button,Header} from 'react-native-elements';
 import {LinearGradient} from 'expo';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import IconAntD from 'react-native-vector-icons/AntDesign';
@@ -13,8 +13,8 @@ import {widthPercentageToDP as wp,
   removeOrientationListener as rol
 } from 'react-native-responsive-screen';
 import helpers from '../globalFunctions.js';
-
-const IP = "http://192.168.0.16"
+import IP from '../constants/IP.js';
+// const IP = "http://192.168.0.16"
 // const IP = "http://172.20.10.6"
 
 class shortListPage extends React.Component{
@@ -59,7 +59,6 @@ renderLogo = () => {
 
   );
 }
-
 
 populateShortlist = async () => {
   let url = IP+':3000/api/Shortlists/userID?q='+this.state.userid;
@@ -156,7 +155,7 @@ render(){
         />
         <View style={{margin:14,padding:5,paddingTop:20, width:'100%',backgroundColor:'white',flexDirection:'row',justifyContent:'center',alignItems:'center',borderBottomWidth:1,borderColor:'gray'}}>
           {this.renderLogo()}
-          <Text style={{paddingTop:20,paddingRight:20,fontFamily:'Avenir',fontSize:36}}> Shortlist:</Text>
+          <Text style={{paddingTop:20,paddingRight:20,fontSize:36}}> Shortlist:</Text>
         </View>
         <Button icon={this.state.shortlist.length==0?null:<Icon name='warning' size={30} color='yellow'/>}
         onPress={()=>{this.deleteShortlist(null,true)}} disabled={this.state.shortlist.length==0}
@@ -173,7 +172,7 @@ render(){
         ListFooterComponent={() => this.state.prevPageSize!=15 ? null : <ActivityIndicator size='large' animating/>}
         renderItem={({item,index}) => (
           <View style={[styles.col,{shadowColor:helpers.getGradientColor(index)}]}>
-            <Text style={[styles.jobTitle,{backgroundColor:helpers.getBackgroundColor(index)}]}>{item[0].title}</Text>
+            <Text style={[styles.jobTitle,{backgroundColor:helpers.getBackgroundColor(index)}]}>{helpers.capitalize(item[0].title)}</Text>
             <View style={styles.jobInfo}>
               <Text style={styles.jobInfoText}><Text style={{fontWeight:'bold',fontSize:16}}>Company:</Text> {item[0].company}</Text>
               <Text style={styles.jobInfoText}><Text style={{fontWeight:'bold',fontSize:16}}>Location:</Text> {item[0].location}<Text style={{fontWeight:'bold',fontSize:16}}>{'\t'}Salary:</Text> {item[0].salary}</Text>
@@ -249,7 +248,6 @@ const styles = StyleSheet.create({
     color:'white',
     fontSize:22,
     fontWeight:'bold',
-    fontFamily:'Avenir',
     width:'100%',
     paddingTop:5,
     paddingBottom:5,

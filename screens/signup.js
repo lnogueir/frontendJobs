@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {ActivityIndicator, TextInput,Alert,Linking, KeyboardAvoidingView,
+import {Platform,ActivityIndicator, TextInput,Alert,Linking, KeyboardAvoidingView,
   TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,TouchableWithoutFeedback,
   Keyboard,ScrollView,Text, View,Image,StyleSheet} from 'react-native';
 import {createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
@@ -16,8 +16,10 @@ import {widthPercentageToDP as wp,
   removeOrientationListener as rol
 } from 'react-native-responsive-screen';
 import Autocomplete from 'react-native-autocomplete-input';
-
-const IP = "http://192.168.0.16"
+import * as Expo from 'expo'
+import IP from '../constants/IP.js';
+import {Font} from 'expo';
+// const IP = "http://192.168.0.16"
 // const IP = "http://172.20.10.6"
 
 const cities = [
@@ -75,8 +77,12 @@ class signupPage extends React.Component{
     }
   }
 
+
+
+
   createProfile = async (userid) =>{
-    console.log(this.state.userid)
+    this.setState({userid:userid})
+    // console.log(this.state.userid)
     let userData = {
       userID:userid,
       username:this.state.username,
@@ -94,7 +100,7 @@ class signupPage extends React.Component{
       body:JSON.stringify(userData)
     });
     let responseJson = await response.json();
-    console.log(responseJson)
+    // console.log(responseJson)
     return responseJson.result
   }catch(error){
     console.log(error)
@@ -112,15 +118,16 @@ for(var i = 0;i<cities.length;i++){
 return predictions;
 }
 
-onChangeDestJOB = (loc) =>{
-  this.setState({location:loc})
-  this.setState({predictions:this.searchCities(loc)})
-}
+  onChangeDestJOB = (loc) =>{
+    this.setState({location:loc})
+    this.setState({predictions:this.searchCities(loc)})
+  }
+
 
   asyncAlert = async () =>{
     return new Promise((resolve,reject)=>{
       Alert.alert(
-        'Congratulations! 🥳 🥳',
+        'Congratulations!' ,
         'Your account has been successfully created. You are ready to get HIRED!',
         [
           {text:'Ok',onPress:()=>{resolve('YES')}},
@@ -129,8 +136,10 @@ onChangeDestJOB = (loc) =>{
         {cancelable:false}
       )
     })
-
   }
+
+
+
 
   createAccount = async () =>{
     let userData = {
@@ -230,7 +239,6 @@ onChangeDestJOB = (loc) =>{
              />
             <Autocomplete
                ref={(input)=>{this.locationInput = input}}
-               autoCapitalize="none"
                returnKeyType={'done'}
                clearButtonMode='while-editing'
                containerStyle={{borderWidth:2,borderColor:'gray',borderRadius:20,width:wp('44%'),height:40}}
@@ -238,7 +246,8 @@ onChangeDestJOB = (loc) =>{
                style={{padding:10,backgroundColor:'transparent',borderColor:'transparent'}}
                inputContainerStyle={{backgroundColor:'transparent',borderColor:'transparent'}}
                listContainerStyle={{backgroundColor:'white',borderRadius:20}}
-               listStyle={{backgroundColor:'white',borderRadius:20}}
+               listStyle={{backgroundColor:'white',borderRadius:20,maxHeight:95}}
+               onBlur={()=>this.setState({predictions:[]})}
                returnKeyType={'done'}
                clearButtonMode={this.state.edit?'always':'never'}
                editable={this.state.edit}
@@ -355,7 +364,6 @@ const styles = StyleSheet.create({
     color:'white',
     fontSize:22,
     fontWeight:'bold',
-    fontFamily:'Avenir',
     width:'100%',
     paddingTop:5,
     paddingBottom:5,

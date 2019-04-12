@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,Text, View,Image,StyleSheet} from 'react-native';
+import {Platform,AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,Text, View,Image,StyleSheet} from 'react-native';
 import {NavigationEvents,createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
 import {ThemeProvider,Button,Header} from 'react-native-elements';
 import {LinearGradient} from 'expo';
@@ -15,8 +15,8 @@ import helpers from '../globalFunctions.js';
 import shortListPage from './shortlist.js';
 import loginPage from './login.js';
 import signupPage from './signup.js';
-
-const IP = "http://192.168.0.16"
+import IP from '../constants/IP.js';
+// const IP = "http://192.168.0.16"
 // const IP = "http://172.20.10.6"
 
 class jobPage extends React.Component{
@@ -24,6 +24,7 @@ class jobPage extends React.Component{
       _isMounted = false
       super(props);
       this.state={
+        guest:null,
         userid:null,
         jobs:[],
         page:1,
@@ -32,13 +33,27 @@ class jobPage extends React.Component{
         shortlist:{},
         location:null,
       };
-      this.getUserid();
-      setTimeout(()=>this.getLocation(),1);
+
+      this.isGuest();
+      setTimeout(()=>{
+        // console.log(this.state.guest)
+        if(!this.state.guest){
+            this.getUserid()
+        }
+      },1);
     }
 
 
 
-
+    isGuest = async () => {
+      try {
+        const value = await AsyncStorage.getItem('userid');
+        // console.log(value==null);
+        this.setState({guest:value==null})
+      } catch (error) {
+        // Error retrieving data
+      }
+    }
 
     componentDidMount = () => {
       this._isMounted = true
@@ -85,7 +100,9 @@ class jobPage extends React.Component{
 
   getLocation = async () =>{
     // console.log(this.state.location)
+    // console.log(this.state.userid)
       let url = IP+":3000/api/profiles/userID?q="+this.state.userid;
+      // console.log(url)
       await fetch(url)
       .then((response)=>response.json())
       .then((responseJson)=>{
@@ -99,16 +116,20 @@ class jobPage extends React.Component{
 populateJobs = async () => {
   // console.log(this.state.location)
   // console.log(this.state.location.split(', '))
-  var location = this.state.location.split(',')
-  // console.log(location)
-  var city = location[0]
-  let url = IP+":3000/api/searches?q="+city+"&category=location&page="+this.state.page;
+  let url =this.state.location!=null
+  ?
+  IP+":3000/api/searches?q="+this.state.location.split(',')[0]+"&category=location&page="+this.state.page
+  :
+  IP+":3000/api/searches?q=&category=all&page="+this.state.page
+  // console.log(url)
   await fetch(url)
   .then((response)=>response.json())
   .then((responseJson)=>{
       this.setState(state=>({prevPageSize:responseJson.jobs.length,refreshing:false,
       jobs:this.state.jobs.concat(responseJson.jobs)}));
-      this.populateShortlist()
+      if(!this.state.guest){
+          this.populateShortlist()
+      }
   })
 }
 
@@ -181,7 +202,15 @@ toShortlist = async (jobId) => {
         <NavigationEvents
         onWillFocus={payload=>{
           this.setState({jobs:[]})
-          setTimeout(()=>this.getLocation(),1)
+          setTimeout(()=>{
+            // console.log(this.state.guest)
+            if(!this.state.guest){
+              // console.log(this.state.userid)
+              this.getLocation()
+            }else{
+              this.populateJobs()
+            }
+          },500)
         }}
         />
         <View style={styles.headerStyle}>
@@ -195,7 +224,6 @@ toShortlist = async (jobId) => {
             <Text style={{color:'white',fontSize:25,fontWeight:'bold'}}>B</Text>
          </View>
         </View>
-
           <FlatList
           onEndReached={()=>this.infiniteScroll()}
           onEndReachedThreshold={0}
@@ -207,13 +235,19 @@ toShortlist = async (jobId) => {
           ListFooterComponent={() => this.state.prevPageSize!=15 ? null : <ActivityIndicator size='large' animating/>}
           renderItem={({item,index}) => (
               <View style={[styles.col,{shadowColor:helpers.getGradientColor(index)}]}>
-                <Text style={[styles.jobTitle,{backgroundColor:helpers.getBackgroundColor(index)}]}>{item.title}</Text>
+                <Text style={[styles.jobTitle,{backgroundColor:helpers.getBackgroundColor(index)}]}>{helpers.capitalize(item.title)}</Text>
                 <View style={styles.jobInfo}>
                   <Text style={styles.jobInfoText}><Text style={{fontWeight:'bold',fontSize:16}}>Company:</Text> {item.company}</Text>
                   <Text style={styles.jobInfoText}><Text style={{fontWeight:'bold',fontSize:16}}>Location:</Text> {item.location}<Text style={{fontWeight:'bold',fontSize:16}}>{'\t'}Salary:</Text> {item.salary}</Text>
                   <Text style={styles.jobInfoText}>{'\n'}<Text style={{fontWeight:'bold',fontSize:16}}>Summary:</Text> {item.summary}{'\n'}</Text>
                   <View style={{flexDirection:'row',justifyContent:'space-evenly',width:'100%'}}>
-                    <Button onPress ={() => {this.toShortlist(item.id)}}
+                    <Button onPress ={() => {
+                      if(!this.state.guest){
+                          this.toShortlist(item.id)
+                      }else{
+                          alert("You must create an account in order to have a shortlist.")
+                      }
+                      }}
                       titleStyle={{fontSize:17}}
                       disabled={this.isJobInShortlist(item.id)}
                       style={{height:46,width:wp('26.5%')}} icon={<Icon
@@ -298,7 +332,6 @@ const styles = StyleSheet.create({
     color:'white',
     fontSize:24,
     fontWeight:'bold',
-    fontFamily:'Avenir',
     width:'100%',
     paddingTop:5,
     paddingBottom:5,

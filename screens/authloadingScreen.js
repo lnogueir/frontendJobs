@@ -84,18 +84,17 @@ const styles = StyleSheet.create({
     shadowOpacity:0
 
   },
-  jobTitle:{
-    padding:10,
-    color:'white',
-    fontSize:22,
-    fontWeight:'bold',
-    fontFamily:'Avenir',
-    width:'100%',
-    paddingTop:5,
-    paddingBottom:5,
-    borderRadius:7,
-    overflow:'hidden'
-  },
+  // jobTitle:{
+  //   padding:10,
+  //   color:'white',
+  //   fontSize:22,
+  //   fontWeight:'bold',
+  //   width:'100%',
+  //   paddingTop:5,
+  //   paddingBottom:5,
+  //   borderRadius:7,
+  //   overflow:'hidden'
+  // },
   jobInfo:{
     margin:12
   },

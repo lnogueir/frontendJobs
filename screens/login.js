@@ -1,10 +1,11 @@
 import React, {Component} from 'react';
-import {AsyncStorage,ActivityIndicator, TextInput,Alert,TouchableWithoutFeedback,Keyboard,
+import {Platform,AsyncStorage,ActivityIndicator, TextInput,Alert,
+  TouchableWithoutFeedback,Keyboard,
   Linking,TouchableHighlight,TouchableOpacity
   ,FlatList,AppRegistry,KeyboardAvoidingView,
   ScrollView,Text,View,Image,StyleSheet} from 'react-native';
 import {NavigationActions,StackActions,createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
-import {CheckBox,ThemeProvider,Button,Header} from 'react-native-elements';
+import {Divider,CheckBox,ThemeProvider,Button,Header} from 'react-native-elements';
 import {LinearGradient} from 'expo';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 // import Icon from 'react-native-vector-icons';
@@ -12,8 +13,9 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import AntIcon from 'react-native-vector-icons/AntDesign';
 import helpers from '../globalFunctions.js';
 import signupPage from './signup.js';
+import IP from '../constants/IP.js';
 
-const IP = "http://192.168.0.16"
+// const IP = "http://192.168.0.16"
 // const IP = "http://172.20.10.6"
 
 class loginPage extends React.Component{
@@ -24,6 +26,8 @@ class loginPage extends React.Component{
     password:null,
     checked:false,
     error:'',
+    userid:null,
+    location:null
   };
   }
 
@@ -45,6 +49,80 @@ class loginPage extends React.Component{
   }
 
 
+  getToken = async () => {
+    // Remote notifications do not work in simulators, only on device
+    if (!Expo.Constants.isDevice) {
+      return;
+    }
+    let { status } = await Expo.Permissions.askAsync(
+      Expo.Permissions.NOTIFICATIONS
+    );
+    if (status !== 'granted') {
+      return;
+    }
+    let token = await Expo.Notifications.getExpoPushTokenAsync();
+    // console.log('Our token', token);
+    let url = IP+":3000/api/notifications/createNotification";
+    // console.log(this.state.userid);
+    let notificationInfo = {
+       userID: this.state.userid,
+       location: this.state.location.split(',')[0],
+       tag:'', // Trocar depois esta poha
+       token: token,
+    }
+    try{
+      let response = await fetch(url,{
+        method:'POST',
+        headers:{
+          'Accept':'application/json',
+          'Content-Type':'application/json',
+        },
+        body:JSON.stringify(notificationInfo)
+      });
+      let responseJson = await response.json();
+      console.log(responseJson)
+      if(responseJson.error!=undefined){
+        alert("Error allowing notification 💩")
+      }
+      return responseJson.result;
+    }catch(error){
+      console.log(error)
+    }
+  }
+
+
+
+  getUserInfo = async () =>{
+    let url = IP+":3000/api/profiles/userID?q="+this.state.userid;
+    await fetch(url)
+    .then((response)=>response.json())
+    .then((responseJson)=>{
+        // console.log(responseJson)
+        this.setState(state=>({location:responseJson.profile[0].location}));
+    })
+  }
+
+  alertAllowNotifications = async () =>{
+    return new Promise((resolve,reject)=>{
+      Alert.alert(
+        'Allow notifications',
+        'Would you like to receive notifications of new jobs in your area?',
+        [
+          {text:'No', onPress:()=>{resolve('YES')}},
+          {text:'Yes',onPress:async()=>{
+            await this.getUserInfo();
+            this.getToken();
+            await AsyncStorage.setItem('notification', 'true');
+            resolve('YES')
+          }},
+        ],
+        {cancelable:false}
+      )
+    })
+  }
+
+
+
   handleLogin = async () => {
     // console.log('hello')
     let userData = {
@@ -63,15 +141,10 @@ class loginPage extends React.Component{
        });
        let responseJson = await response.json();
        if(responseJson.error==undefined){
-
          await AsyncStorage.setItem('userid', responseJson.userId.toString());
+         this.setState({userid:responseJson.userId.toString()})
+         await this.alertAllowNotifications()
          this.props.navigation.navigate('Main');
-        //  const resetAction = StackActions.reset({
-        //     index: 0,
-        //     actions: [NavigationActions.navigate({ routeName: 'MainStack' })],
-        // });
-        //  this.props.navigation.dispatch(resetAction);
-
        }else{
          this.setState({error:'Sorry, username and/or password invalid.'})
          // alert("Sorry, the username or password is wrong. 💩")
@@ -90,7 +163,7 @@ class loginPage extends React.Component{
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <KeyboardAvoidingView behavior='padding' style={{justifyContent:'flex-end'}}>
       <View style={{flexDirection:'column',justifyContent:'space-between'}}>
-        <View style={{alignItems:'center',justifyContent:'center',marginVertical:'19%'}}>
+        <View style={{alignItems:'center',justifyContent:'center',marginVertical:'10%'}}>
           <View style={styles.headerStyle}>
            <View style={[styles.innerHeaderStyle,{backgroundColor:'red'}]}>
              <Text style={{color:'white', fontSize:35,fontWeight:'bold'}}>J</Text>
@@ -104,7 +177,7 @@ class loginPage extends React.Component{
           </View>
         </View>
         <View style={{alignItems:'center',justifyContent:'center'}}>
-          <Text style={{fontSize:23, fontFamily:'Avenir'}}> Login to <Text style={{fontWeight:'bold',color:'red'}}>J</Text><Text style={{fontWeight:'bold',color:'green'}}>O</Text><Text style={{fontWeight:'bold',color:'blue'}}>B</Text> and get hired! </Text>
+          <Text style={{fontSize:23}}> Login to <Text style={{fontWeight:'bold',color:'red'}}>J</Text><Text style={{fontWeight:'bold',color:'green'}}>O</Text><Text style={{fontWeight:'bold',color:'blue'}}>B</Text> and get hired! </Text>
         </View>
         <View style={styles.login}>
           <TextInput
@@ -144,15 +217,19 @@ class loginPage extends React.Component{
           </View>
 
 
-          <Button buttonStyle={{margin:30}} onPress={() => {this.props.navigation.navigate('signupPage')}} icon={
+          <Button buttonStyle={{margin:15}} onPress={() => {this.props.navigation.navigate('signupPage')}} icon={
             <Icon
               name='user-circle'
               size={25}
               color='white'
               />
           }
-            style={{marginTop:'9%'}} title='  Or create account'
+            style={{marginTop:'9%'}} title='  Create account'
             />
+            <Text style={{alignSelf:'center',color:'gray',fontSize:23}}>──────  Or  ──────</Text>
+            <Button onPress={()=>{this.props.navigation.navigate('accountPage',{guest:true})}} buttonStyle={{margin:15}} title="Enter as Guest" type="outline"/>
+
+
       </View>
     </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
@@ -168,6 +245,8 @@ export default loginPage;
 
 
 const styles = StyleSheet.create({
+
+
   container:{
     flex:1,
     flexDirection:'column',
@@ -221,7 +300,7 @@ const styles = StyleSheet.create({
     color:'white',
     fontSize:22,
     fontWeight:'bold',
-    fontFamily:'Avenir',
+    // fontFamily:Platform.OS==='ios'?'Avenir':'Nunito',
     width:'100%',
     paddingTop:5,
     paddingBottom:5,

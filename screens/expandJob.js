@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,
+import {Platform,AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,
   TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,
   Text, View,Image,StyleSheet,KeyboardAvoidingView} from 'react-native';
 import {NavigationEvents,createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
@@ -21,10 +21,9 @@ import {widthPercentageToDP as wp,
   removeOrientationListener as rol
 } from 'react-native-responsive-screen';
 
+import IP from '../constants/IP.js';
+// const IP = "http://192.168.0.16"
 
-const IP = "http://192.168.0.16" //faculdade
-// const IP = //minha casa
-// const IP = "http://172.20.10.6"
 
 
 class expandJob extends React.Component{
@@ -34,9 +33,17 @@ class expandJob extends React.Component{
       userid:this.props.navigation.getParam('userid','Invalid userid'),
       job:this.props.navigation.getParam('job','Invalid job'),
       shortlist:{},
-      displayFooter:this.props.navigation.getParam('display','Invalid display'),
-      daysPosted: null
+      guest:null,
+      // displayFooter:this.props.navigation.getParam('display','Invalid display'),
     };
+
+    this.isGuest()
+    setTimeout(()=>{
+      if(!this.state.guest){
+        this.populateShortlist()
+      }
+      this.getDaysPosted()
+    },1)
 
 
     //HOW TO DEAL WITH DATES:
@@ -53,15 +60,32 @@ class expandJob extends React.Component{
 
   static navigationOptions = ({navigation}) => {
     return {
-      title: 'Job Page'
+      title: 'Job Page',
+    }
+  }
+
+  isGuest = async () => {
+    try {
+      const value = await AsyncStorage.getItem('userid');
+      // console.log(value==null);
+      this.setState({guest:value==null})
+    } catch (error) {
+      // Error retrieving data
     }
   }
 
 
   getDaysPosted = () => {
+
     var curDate = new Date(Date())
     var postedDate = new Date(this.state.job.date_post)
-    this.setState({daysPosted:Math.floor((curDate - postedDate)/(1000*60*60*24))})
+    var days = (curDate - postedDate)/(1000*60*60*24);
+    // console.log(days)
+    return days
+  }
+  getHoursPosted = (days) => {
+    // console.log(days*24)
+    return days*24;
   }
 
   componentDidMount = () => {
@@ -142,37 +166,31 @@ class expandJob extends React.Component{
       return this.state.shortlist[id]==id
     }
 
-    addFooter = () => {
-      return(
-        <View style={{height:'3%',borderTopWidth:1,borderColor:'gray'}}></View>
-      );
-    }
+    // addFooter = () => {
+    //   return(
+    //     <View style={{height:'3%',borderTopWidth:1,borderColor:'gray'}}></View>
+    //   );
+    // }
 
 
   render(){
     return(
       <View style={{flex:1,height:hp('100%')}}>
-      <NavigationEvents
-      onWillFocus={payload=>{
-        this.populateShortlist()
-        this.getDaysPosted()
-      }}
-      />
         <View style={{alignItems:'center'}}>
-          <Text style={[styles.jobTitle,{backgroundColor:helpers.getBackgroundColor(0)}]}>{this.state.job.title}</Text>
+          <Text style={[styles.jobTitle,{backgroundColor:helpers.getBackgroundColor(0)}]}>{helpers.capitalize(this.state.job.title)}</Text>
           <Button disabled disabledStyle={{backgroundColor:'#397af8'}}
           disabledTitleStyle={{color:'white',fontWeight:'bold',fontSize:17}}
           icon={<Ionicons name='md-business' size={35} color='white'/>}
            style={{width:wp('87%')}} title={true?' Company | '+this.state.job.company:null}/>
         </View>
         <View style={{marginTop:10,justifyContent:'space-evenly',marginLeft:10,marginRight:15,alignItems:'center',flexDirection:'row',width:wp('95%')}}>
-          <Button disabledTitleStyle={{color:'white',fontSize:17}} disabledStyle={{backgroundColor:'orange'}} disabled icon={<MatIcon2 name='map-marker-radius' size={35} color='olive'/>} title={true?this.state.job.location:null} style={{height:hp('7%'),width:wp('41%')}}/>
-          <Button disabledTitleStyle={{color:'white',fontSize:16}} disabledStyle={{backgroundColor:'orange'}} disabled style={{height:hp('7%'),width:wp('41%')}} icon={<Icon name='dollar' size={38} color='olive'/>} title={this.state.job.salary==''?'  Not specified':this.state.job.salary}/>
+          <Button disabledTitleStyle={{color:'white',fontSize:17}} disabledStyle={{backgroundColor:'orange'}} disabled icon={<MatIcon2 name='map-marker-radius' size={32} color='olive'/>} title={true?this.state.job.location:null} style={{height:hp('7%'),width:wp('41%')}}/>
+          <Button disabledTitleStyle={{color:'white',fontSize:16}} disabledStyle={{backgroundColor:'orange'}} disabled style={{height:hp('7%'),width:wp('41%')}} icon={<Icon name='dollar' size={32} color='olive'/>} title={this.state.job.salary==''?'  Not specified':this.state.job.salary}/>
         </View>
-        <View style={{alignItems:'center'}}>
+        <View style={{marginTop:8,alignItems:'center'}}>
           <Button disabled disabledTitleStyle={{color:'black'}}
           icon={<MatIcon name='date-range' size={35} color='black'/>}
-           style={{width:wp('87%')}} title={true?' Posted '+this.state.daysPosted+' days ago':null}/>
+           style={{width:wp('87%')}} title={Math.floor(this.getDaysPosted())>=1?' Posted '+Math.floor(this.getDaysPosted())+' days ago':' Posted '+Math.ceil(this.getHoursPosted(this.getDaysPosted()))+' hours ago'}/>
         </View>
         <View style={{justifyContent:'center',alignItems:'center',margin:5}}>
           <Text style={[styles.jobTitle,{backgroundColor:helpers.getBackgroundColor(1),fontSize:24}]}>What you will do:</Text>
@@ -183,7 +201,13 @@ class expandJob extends React.Component{
           </View>
         </ScrollView>
         <View style={{flexDirection:'row',justifyContent:'space-evenly',width:'100%'}}>
-          <Button onPress ={() => {this.toShortlist(this.state.job.id)}}
+          <Button onPress ={() => {
+            if(!this.state.guest){
+                this.toShortlist(this.state.job.id)
+            }else{
+                alert("You must create an account in order to have a shortlist.")
+            }
+          }}
             titleStyle={{fontSize:17}}
             disabled={this.isJobInShortlist(this.state.job.id)}
             style={{height:46,width:wp('43%')}} icon={<Icon
@@ -195,7 +219,7 @@ class expandJob extends React.Component{
           <Button titleStyle={{fontSize:17}} style={{color:'white', height:46,width:wp('43%')}} onPress={() => Linking.openURL(this.state.job.link)}
           icon={<Icon name='id-card' color='white' size={28}/>} title=' Apply!'/>
         </View>
-        {this.state.displayFooter?this.addFooter():null}
+        <View style={{height:'2.5%',borderTopWidth:1,borderColor:'white'}}></View>
 
       </View>
     )
@@ -210,7 +234,6 @@ const styles = StyleSheet.create({
   textStyle:{
     marginLeft:'5%',
     padding:10,
-    fontFamily:'Avenir',
     overflow:'hidden',
     backgroundColor:'whitesmoke',
     borderRadius:20
@@ -260,9 +283,8 @@ const styles = StyleSheet.create({
   jobTitle:{
     padding:8,
     color:'white',
-    fontSize:33,
+    fontSize:30,
     fontWeight:'bold',
-    fontFamily:'Avenir',
     margin:'3%',
     width:wp('87%'),
     paddingTop:5,
