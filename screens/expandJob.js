@@ -83,10 +83,6 @@ class expandJob extends React.Component{
     // console.log(days)
     return days
   }
-  getHoursPosted = (days) => {
-    // console.log(days*24)
-    return days*24;
-  }
 
   componentDidMount = () => {
     this._isMounted = true
@@ -101,7 +97,7 @@ class expandJob extends React.Component{
     await fetch(url)
     .then((response)=>response.json())
     .then((responseJson)=>{
-        let url = IP+':3000/api/indeed-jobs/jobsArray'
+        let url = IP+':3000/api/job-posts/jobsArray'
         try{
             this.timer = fetch(url,{
             method:'POST',
@@ -190,7 +186,7 @@ class expandJob extends React.Component{
         <View style={{marginTop:8,alignItems:'center'}}>
           <Button disabled disabledTitleStyle={{color:'black'}}
           icon={<MatIcon name='date-range' size={35} color='black'/>}
-           style={{width:wp('87%')}} title={Math.floor(this.getDaysPosted())>=1?' Posted '+Math.floor(this.getDaysPosted())+' days ago':' Posted '+Math.ceil(this.getHoursPosted(this.getDaysPosted()))+' hours ago'}/>
+           style={{width:wp('87%')}} title={Math.floor(this.getDaysPosted())>1?(Math.floor(this.getDaysPosted())==1?' Posted 1 day ago':' Posted '+Math.floor(this.getDaysPosted())+' days ago'):' Posted today'}/>
         </View>
         <View style={{justifyContent:'center',alignItems:'center',margin:5}}>
           <Text style={[styles.jobTitle,{backgroundColor:helpers.getBackgroundColor(1),fontSize:24}]}>What you will do:</Text>

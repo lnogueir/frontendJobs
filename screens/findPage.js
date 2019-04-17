@@ -146,7 +146,7 @@ class findPage extends React.Component{
       await fetch(url)
       .then((response)=>response.json())
       .then((responseJson)=>{
-          let url = IP+':3000/api/indeed-jobs/jobsArray'
+          let url = IP+':3000/api/job-posts/jobsArray'
           try{
               this.timer = fetch(url,{
               method:'POST',
