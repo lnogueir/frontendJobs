@@ -1,26 +1,17 @@
 import React, {Component} from 'react';
-import {Platform,AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,
-  TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,
-  Text, View,Image,StyleSheet,KeyboardAvoidingView} from 'react-native';
-import {NavigationEvents,NavigationActions,StackActions,createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
-import {Input,CheckBox,ThemeProvider,Button,Header} from 'react-native-elements';
+import {Platform,AsyncStorage, TextInput,Alert,ScrollView,
+Text, View,Image,KeyboardAvoidingView,TouchableOpacity} from 'react-native';
+import {NavigationEvents} from 'react-navigation';
+import {Overlay,ListItem,Input,Button,Header} from 'react-native-elements';
 import Autocomplete from 'react-native-autocomplete-input';
-import {LinearGradient} from 'expo';
-import SLIcon from 'react-native-vector-icons/SimpleLineIcons';
-import MatIcon from 'react-native-vector-icons/MaterialCommunityIcons';
-import EntIcon from 'react-native-vector-icons/Entypo'
-import AntIcon from 'react-native-vector-icons/AntDesign';
+import MatCIcon from 'react-native-vector-icons/MaterialCommunityIcons';
+import MatIcon from 'react-native-vector-icons/MaterialIcons';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import {widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-  listenOrientationChange as loc,
-  removeOrientationListener as rol
-} from 'react-native-responsive-screen';
-import * as Expo from 'expo'
-
+import AntIcon from 'react-native-vector-icons/AntDesign';
+import Tags from "react-native-tags";
 import IP from '../constants/IP.js';
+import accountStyle from '../styles/accountStyle.js'
 
-// const IP = "http://192.168.0.16"
 
 
 
@@ -62,6 +53,7 @@ const cities = [
 
 class accountPage extends React.Component{
   constructor(props){
+    tagArray=[]
     super(props);
     this.state = {
       notifications:false,
@@ -73,6 +65,7 @@ class accountPage extends React.Component{
       profileID:null,
       predictions:[],
       tag:null,
+      isVisible:false,
       guest:this.props.navigation.getParam('guest',false),
     };
     // console.log(this.state.guest);
@@ -123,7 +116,7 @@ class accountPage extends React.Component{
         body:JSON.stringify(notificationInfo)
       });
       let responseJson = await response.json();
-      console.log(responseJson)
+      // console.log(responseJson)
       if(responseJson.error!=undefined){
         alert("Error allowing notification 💩")
       }
@@ -135,12 +128,9 @@ class accountPage extends React.Component{
 
   }
 
-
-
   componentWillUnmount = () => {
     this.listener && this.listener.remove();
   }
-
 
   handleNotification = ({ origin, data }) => {
     // console.log(
@@ -148,8 +138,6 @@ class accountPage extends React.Component{
     // );
     this.props.navigation.navigate('notificationJobsPage',{notificationData:data.jobs})
   };
-
-
 
   // isNotificationActive = async () => {
   //   let url = IP+":3000/api/notifications/userID?q="+this.state.userid;
@@ -193,6 +181,7 @@ class accountPage extends React.Component{
      const value = await AsyncStorage.getItem('userid');
      if (value !== null) {
        this.setState({userid:value})
+       this.getUserInfo()
      }
    } catch (error) {
      // Error retrieving data
@@ -242,6 +231,7 @@ class accountPage extends React.Component{
         this.setState(state=>({username:responseJson.profile[0].username,
         email:responseJson.profile[0].email,location:responseJson.profile[0].location,
         profileID:responseJson.profile[0].id,tag:responseJson.profile[0].tag}));
+        this.tagArray = this.state.tag.split(',')
     })
   }
   searchCities = (input) =>{
@@ -263,13 +253,14 @@ class accountPage extends React.Component{
   editUserInfo = async () => {
     let url = IP+":3000/api/profiles/updateprofile";
     // console.log(this.state.userid)
+    console.log(this.tagArray)
     let editInfo = {
       userID:this.state.userid,
       profileID:this.state.profileID,
       username:this.state.username,
       email:this.state.email,
       location:this.state.location,
-      tag:this.state.tag
+      tag:this.tagArray.join(',')
     }
     try{
       let response = await fetch(url,{
@@ -290,7 +281,7 @@ class accountPage extends React.Component{
         let updatedInfo = {
           userID:this.state.userid,
           location:this.state.location.split(',')[0],
-          tag:this.state.tag
+          tag:null
         }
         let finalResponse = await fetch(url,{
           method:'POST',
@@ -301,6 +292,7 @@ class accountPage extends React.Component{
           body:JSON.stringify(updatedInfo)
         });
         responseJson = await finalResponse.json()
+        this.getUserInfo()
         console.log(responseJson)
       }
       return responseJson.result;
@@ -332,137 +324,180 @@ class accountPage extends React.Component{
 
   render() {
     return(
-      <View style={{flex:1, height:'100%'}}>
+    <KeyboardAvoidingView style={{flex:1,justifyContent:'flex-end'}} behavior="padding" enabled>
+      <View style={accountStyle.container}>
         <NavigationEvents
-        onDidFocus={payload=>{
-          if(!this.state.edit && !this.state.guest){
-            setTimeout(()=>{
-              this.getUserInfo()
-              // this.isNotificationActive()
-            },1)
-          }
-        }}
-        onWillBlur={payload=>{
-          if(this.state.edit){
-            this.props.navigation.navigate('accountPage')
-            this.callAlertNavigate(payload.action.routeName)
-          }
-          this.setState({edit:false})
-        }}
+          onDidFocus={payload=>{
+            if(this.state.userid && !this.state.edit && !this.state.guest){
+                this.getUserInfo()
+            }
+          }}
+          onWillBlur={payload=>{
+            if(this.state.edit){
+              this.props.navigation.navigate('accountPage')
+              this.callAlertNavigate(payload.action.routeName)
+            }
+            this.setState({edit:false})
+          }}
         />
-      <Header
-        barStyle="light-content"
-        leftComponent={
-        <Button onPress={()=>{
+        <Overlay
+            isVisible={this.state.isVisible}
+            width='70%'
+            height='38%'
+            windowBackgroundColor="rgba(255, 255, 255, .5)"
+            onBackdropPress={() => {
+              this.editUserInfo()
+              this.setState({ isVisible: false })
+            }}
+            overlayBackgroundColor="#45546d"
+          >
+          <View stlye={{margin:10,justifyContent:'center',alignItems:'center'}}>
+            <Text style={accountStyle.overlayTitle}>Your tags:</Text>
+            <Tags
+              containerStyle={{margin:10}}
+              textInputProps={{
+                 containerStyle:{borderRadius:20},
+                 autoFocus:true,
+                 returnKeyType:'done',
+                 onSubmitEditing:()=>{
+                   this.editUserInfo()
+                   this.setState({ isVisible: false })
+                 }
+               }}
+               initialTags={this.state.tag?this.state.tag.split(','):[]}
+               onChangeTags={tags => {
+                 this.tagArray = tags
+               }}
+               maxNumberOfTags={15}
+               deleteTagOnPress={true}
+               containerStyle={{ justifyContent: "center" }}
+               inputStyle={{ backgroundColor: "lightgray" }}
+            />
+          </View>
+        </Overlay>
+        <Header
+          backgroundColor='transparent'
+          leftComponent={this.state.edit?<Button onPress={()=>{
             this.getUserInfo()
             this.setState({edit:false})
         }}
         disabled={!this.state.edit} disabledStyle={{backgroundColor:'transparent'}} disabledTitleStyle={{color:'transparent'}}
         type='clear'  title='Cancel'/>
-        }
-        centerComponent={{text:'Account',style:{color:'black',fontWeight:'bold',fontSize:18}}}
-        rightComponent={<Button icon={!this.state.edit?<EntIcon name='edit'color="#397af8" size={20}/>:<EntIcon name='save'color="#397af8" size={20}/>}
-        onPress={()=>{
+        :<Image
+            style={{width:40,height:46}}
+            source={require('../assets/PlanetJobLogo.png')}
+          />}
+          centerComponent={{text:'Profile',style:accountStyle.headerFontStyle}}
+          rightComponent={<Button onPress={()=>{
             if(this.state.edit){
               this.editUserInfo();
             }
             this.setState({edit:!this.state.edit})
-        }}
-        type='clear' title={!this.state.edit?'Edit':'Save'}/>}
-        containerStyle={{
-          backgroundColor: 'white',
-          justifyContent: 'space-around',
-        }}
-      />
-      <View style={{marginTop:7,height:'13%',shadowColor:'gray',shadowOpacity:1,shadowRadius:5
-      ,flexDirection:'row',justifyContent:'space-evenly',
-      alignItems:'center'}}>
-        <View style={[{backgroundColor:'red'},styles.innerHeaderStyle]}></View>
-        <View style={[{backgroundColor:'green'},styles.innerHeaderStyle]}></View>
-        <View style={[{backgroundColor:'blue'},styles.innerHeaderStyle]}></View>
-      </View>
-      <View style={{ alignItems:'center',flexDirection:'column', justifyContent:'space-evenly',
-      width:wp('100%'),height:hp('33%'),marginTop:10}}>
-        <View style={{flexDirection:'column',zIndex:1}}>
-          <Text style={{fontSize:21}}><MatIcon name='map-marker-radius' color='black' size={30}/>Looking for a <Text style={{fontWeight:'bold',color:'red'}}>J</Text><Text style={{fontWeight:'bold',color:'green'}}>O</Text><Text style={{fontWeight:'bold',color:'blue'}}>B</Text> in...</Text>
-          <Autocomplete
-             containerStyle={{width:wp('90%')}}
-             autoCorrect={false}
-             listStyle={{maxHeight:120}}
-             onBlur={()=>this.setState({predictions:[]})}
-             inputContainerStyle={{paddingLeft:5, borderColor:'gray',borderWidth:2}}
-             returnKeyType={'done'}
-             clearButtonMode={this.state.edit?'always':'never'}
-             editable={this.state.edit}
-             data={this.state.predictions}
-             defaultValue={this.state.location}
-             onChangeText={text => this.onChangeDestJOB(text)}
-             placeholder='City, Province, Country'
-             renderItem={({ loc }) => (
-                <Text style={{padding:7}} onPress={() => this.setState({ location: loc,predictions:[] })}>
-                  {loc}
-                </Text>
-              )}
-            />
-        </View>
-        <Input
-          returnKeyType={'done'}
-          clearButtonMode={this.state.edit?'always':'never'}
-          editable={this.state.edit}
-          autoFocus={this.state.edit}
-          onChangeText={(text) => this.setState({username:text})}
-          value={this.state.username}
-          containerStyle={{width:wp('90%')}} inputStyle={{padding:7}}
-          leftIcon={<Icon name='user-circle' color='black' size={30}/>}
-          placeholder='Username'
-          />
-        <Input
-          returnKeyType={'done'}
-          clearButtonMode={this.state.edit?'always':'never'}
-          editable={this.state.edit}
-          onChangeText={(text) => this.setState({email:text})}
-          value={this.state.email}
-          inputStyle={{padding:7}} containerStyle={{width:wp('90%')}}
-          placeholder='example@email.com' leftIcon={<MatIcon name='email' color='black' size={30}/>}
-          />
-        <Input
-          returnKeyType={'done'}
-          clearButtonMode={this.state.edit?'always':'never'}
-          editable={this.state.edit}
-          onChangeText={(text) => this.setState({tag:text})}
-          value={this.state.tag}
-          inputStyle={{padding:7}} containerStyle={{width:wp('90%')}}
-          placeholder='Example tag: Summer' leftIcon={<AntIcon name='tags' color="black" size={30}/>}
-        />
-      </View>
-      <View style={{flexDirection:'row',height:hp('8%'),width:wp('93%'),justifyContent:'space-evenly',alignItems:'center'}}>
-        <Button buttonStyle={{width:wp('45%')}} type='clear' title='Notifications'
-        onPress={async ()=>{
-          const permission = await AsyncStorage.getItem('notification')
-          if(permission=='true'){
-            this.props.navigation.navigate('notificationPage')
-          }else{
-            await this.alertAllowNotifications()
-          }
-        }}
-        />
-        <Button buttonStyle={{width:wp('45%')}} type="clear" title="Change Password"/>
-      </View>
-      <View style={{alignItems:'center',height:hp('15%'),width:wp('100%'),justifyContent:'center'}}>
-        <Button buttonStyle={{width:wp('75%')}} type="outline"
-        icon={<SLIcon name="logout" color="#397af8" size={33}/>}
-        onPress={()=>{
-        if(this.state.edit){
-            this.callAlertLogout()
-        }else{
-            this._signOutAsync()
-        }
 
-        }}
-        title='   Sign out'/>
+          }}
+          type='clear' icon={!this.state.edit?<Icon name='edit' color='#1968e8' size={32}/>:<MatIcon name='save' color='#1968e8' size={32}/>}/>}
+        />
+          <ScrollView keyboardShouldPersistTaps='handled'>
+            <View style={accountStyle.profileInfoView}>
+              <Text style={accountStyle.accountInfoTitle}>Account Information</Text>
+              <Input
+                returnKeyType={'done'}
+                clearButtonMode={this.state.edit?'always':'never'}
+                editable={this.state.edit}
+                autoFocus={this.state.edit}
+                onChangeText={(text) => this.setState({username:text})}
+                value={this.state.username}
+                inputStyle={accountStyle.inputStyle}
+                containerStyle={accountStyle.containerStyle}
+                leftIcon={<MatIcon name='account-circle' color='#45546d' size={34}/>}
+                placeholder='Username'
+                placeholderTextColor='#45546d'
+              />
+              <Input
+                returnKeyType={'done'}
+                clearButtonMode={this.state.edit?'always':'never'}
+                editable={this.state.edit}
+                onChangeText={(text) => this.setState({email:text})}
+                value={this.state.email}
+                inputStyle={accountStyle.inputStyle}
+                containerStyle={accountStyle.containerStyle}
+                leftIcon={<MatIcon name='mail' color='#45546d' size={34}/>}
+                placeholder='example@email.com'
+                placeholderTextColor='#45546d'
+              />
+              <Button onPress={()=>this.props.navigation.navigate('changePassword',{userid:this.state.userid})}
+              buttonStyle={[accountStyle.buttonStyle,{backgroundColor:'#45546d'}]}
+              title='CHANGE PASSWORD' titleStyle={accountStyle.buttonTitleStyle}
+              />
+            </View>
+            <View style={accountStyle.profileInfoView}>
+              <Text style={accountStyle.accountInfoTitle}>Notifications</Text>
+              <View style={{zIndex:1}}>
+                <MatIcon style={accountStyle.icon} name='location-on' color='#45546d' size={34}/>
+                <Autocomplete
+                 returnKeyType={'done'}
+                 onBlur={()=>this.setState({predictions:[]})}
+                 editable={this.state.edit}
+                 style={accountStyle.input}
+                 listContainerStyle={accountStyle.outsideInput}
+                 listStyle={{maxHeight:120}}
+                 autoCorrect={false}
+                 inputContainerStyle={{borderColor:'transparent'}}
+                 clearButtonMode={this.state.edit?'always':'never'}
+                 data={this.state.predictions}
+                 defaultValue={this.state.location}
+                 onChangeText={text => this.onChangeDestJOB(text)}
+                 underlineColorAndroid='transparent'
+                 placeholder='Where?'
+                 renderItem={({ loc }) => (
+                    <Text style={accountStyle.textIn} onPress={() => this.setState({ location: loc,predictions:[] })}>
+                      {loc}
+                    </Text>
+                  )}
+              />
+              </View>
+              <ListItem
+                style={accountStyle.listItemStyle}
+                containerStyle={{borderBottomWidth:1,borderColor:'gray'}}
+                leftIcon={<AntIcon name='tags' color='#45546d' size={30}/>}
+                onPress = {()=>this.setState({isVisible:true})}
+                rightIcon={<AntIcon name='right' color='gray' size={25}/>}
+                title={'Tags'}
+                titleStyle={accountStyle.listItemTitle}
+                badge={{ value:this.state.tag?this.state.tag.split(',').length:0, badgeStyle:{width:50,height:30,backgroundColor:'#45546d',borderRadius:50}}}
+                // subtitle={l}
+                // subtitleStyle={{fontSize:14,color:'gray'}}
+              />
+              <Button buttonStyle={[accountStyle.buttonStyle,{backgroundColor:'blue'}]}
+              title='VIEW NOTIFICATIONS' titleStyle={accountStyle.buttonTitleStyle}
+              onPress={async ()=>{
+                const permission = await AsyncStorage.getItem('notification')
+                if(permission=='true'){
+                  this.props.navigation.navigate('notificationPage')
+                }else{
+                  await this.alertAllowNotifications()
+                }
+              }}
+              />
+            </View>
+            <View style={accountStyle.logoutView}>
+              <Button
+              onPress={()=>{
+                if(this.state.edit){
+                    this.callAlertLogout()
+                }else{
+                    this._signOutAsync()
+                }
+              }}
+              buttonStyle={[accountStyle.buttonStyle,{backgroundColor:'red',width:200,height:50}]}
+              title='Logout'
+              titleStyle={accountStyle.buttonTitleStyle}
+              icon={<MatCIcon name="logout-variant" color="white" size={30}/>}
+              />
+            </View>
+        </ScrollView>
       </View>
-
-      </View>
+    </KeyboardAvoidingView>
     );
   }
 
@@ -471,86 +506,3 @@ class accountPage extends React.Component{
 }
 
 export default accountPage;
-
-
-
-const styles = StyleSheet.create({
-  autocompleteContainer: {
-    flexDirection:'column',
-    marginTop:10,
-    flex: 1,
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    zIndex: 1
-  },
-  container:{
-    flex:1,
-    flexDirection:'column',
-    alignItems:"center",
-    justifyContent:"center",
-  },
-  entries:{
-    height:hp('50%'),
-    marginRight:'15%',
-    marginLeft:'15%',
-    flexDirection:'column',
-    justifyContent:'space-evenly',
-  },
-  headerStyle:{
-    // marginTop:'3%',
-    // paddingTop:35,
-    flexDirection: 'row',
-    alignItems:'center',
-    alignSelf:'center',
-    justifyContent:'space-evenly',
-    flex:-1,
-    flexWrap:'nowrap',
-    width:'100%',
-  },
-  innerHeaderStyle:{
-    marginHorizontal:'4%',
-    width:50,
-    height:50,
-    borderRadius:0,
-    alignItems:'center',
-    justifyContent:'center',
-  },
-  col:{
-    flex:1,
-    paddingVertical:10,
-    paddingHorizontal:15,
-    flexDirection:'column',
-    justifyContent:'space-between',
-    borderBottomWidth:6,
-    borderColor:'white',
-    shadowOpacity:0
-
-  },
-  jobTitle:{
-    padding:10,
-    color:'white',
-    fontSize:22,
-    fontWeight:'bold',
-    width:'100%',
-    paddingTop:5,
-    paddingBottom:5,
-    borderRadius:7,
-    overflow:'hidden'
-  },
-  jobInfo:{
-    margin:12
-  },
-  jobInfoText:{
-    fontSize:14,
-  },
-  row:{flex:1,
-    lineHeight:15,
-    paddingVertical:25,
-    paddingHorizontal:15,
-    flexDirection:'row',
-    justifyContent:'space-evenly',
-    borderBottomWidth:1,
-    borderColor:'white'},
-});

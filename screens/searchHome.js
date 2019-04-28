@@ -2,24 +2,19 @@ import React, {Component} from 'react';
 import {Platform,AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,
   TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,
   Text, View,Image,StyleSheet,TouchableWithoutFeedback, Keyboard} from 'react-native';
-import {NavigationEvents,createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
-import {ThemeProvider,Button,Header} from 'react-native-elements';
+import {NavigationEvents} from 'react-navigation';
+import {Divider,ListItem,Button,Header} from 'react-native-elements';
 import {LinearGradient} from 'expo';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import MatIcon from 'react-native-vector-icons/MaterialCommunityIcons';
-import helpers from '../globalFunctions.js';
-
-import shortListPage from './shortlist.js';
-import loginPage from './login.js';
-import signupPage from './signup.js';
+import MatIcon from 'react-native-vector-icons/MaterialIcons';
+import searchHomeStyle from '../styles/searchHomeStyle.js'
 import Autocomplete from 'react-native-autocomplete-input';
-import {widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-  listenOrientationChange as loc,
-  removeOrientationListener as rol
-} from 'react-native-responsive-screen';
+import AntIcon from 'react-native-vector-icons/AntDesign';
+
 import IP from '../constants/IP.js';
+
+
 
 
 const cities = [
@@ -57,22 +52,25 @@ const cities = [
   }
 ]
 
-
-
 class Home extends React.Component{
-
   constructor(props){
+    _isMounted = false
     super(props)
     this.state = {
+      guest:false,
       userid:null,
       text: null,
       location:null,
       predictions:[],
       history:[],
       notificationData:[],
-
+      recommended:[],
+      shortlist:[],
+      index:0,
+      updatedRecommendation:[],
+      display:true,
   };
-  this.getUserid()
+  this.isGuest()
 
   }
 
@@ -81,6 +79,7 @@ class Home extends React.Component{
      const value = await AsyncStorage.getItem('userid');
      if (value !== null) {
        this.setState({userid:value})
+       this.populateShortlist()
        const permission = await AsyncStorage.getItem('notification')
        if(permission=='true'){
          this.listener = Expo.Notifications.addListener(this.handleNotification);
@@ -153,166 +152,283 @@ class Home extends React.Component{
   //   })
   // }
 
+  componentWillUnmount = () => {
+    this._isMounted = false
+  }
+
+
+
+
+  updateRecommended = () => {
+    // console.log(this.state.index,this.state.recommended.length)
+    let updatedRecommendation = []
+    if(this.state.recommended.length<3){
+      updatedRecommendation=this.state.recommended
+    }else{
+      if(this.state.index==this.state.recommended.length-1){
+        updatedRecommendation.push(this.state.recommended[this.state.index])
+        updatedRecommendation=updatedRecommendation.concat(this.state.recommended.slice(0,2))
+        this.setState({index:0})
+      }else if(this.state.index==this.state.recommended.length-2){
+        updatedRecommendation = this.state.recommended.slice(this.state.index)
+        updatedRecommendation.push(this.state.recommended[0])
+        this.setState({index:0})
+      }else{
+        updatedRecommendation = this.state.recommended.slice(this.state.index,this.state.index+3)
+        this.setState({index:this.state.index+3})
+        if(this.state.index+3==this.state.recommended.length){
+          this.setState({index:0})
+        }
+      }
+    }
+    return updatedRecommendation
+  }
+
+  isGuest = async () => {
+    try {
+      const value = await AsyncStorage.getItem('userid');
+      // console.log(value==null);
+      this.setState({guest:value==null})
+      await this.getUserid()
+
+    } catch (error) {
+      // Error retrieving data
+    }
+  }
+
+  getDaysPosted = (date) => {
+    var curDate = new Date(Date())
+    var postedDate = new Date(date)
+    var days = (curDate - postedDate)/(1000*60*60*24);
+    return days
+  }
+
+  getRecommended = () => {
+    let url = 'http://127.0.0.1:5000/recommendation'
+    var data={
+      jobsID:this.state.shortlist.map(job=>{return job[0].id})
+    }
+    // console.log(data)
+
+    fetch(url,{
+      method:'POST',
+      headers:{
+        'Accept':'application/json',
+        'Content-Type':'application/json',
+      },
+      body:JSON.stringify(data)
+    }).then(response=>response.json())
+      .then(responseJson=>{
+        let url = IP+':3000/api/job-posts/jobsArray'
+        fetch(url,{
+        method:'POST',
+        headers:{
+          'Accept':'application/json',
+          'Content-Type':'application/json',
+        },
+        body:JSON.stringify(responseJson.recommendations)
+      }).then((jobResponse)=>jobResponse.json())
+        .then((finalResponse)=>{
+          this.setState({recommended:finalResponse.jobs})
+          this.setState({updatedRecommendation:this.updateRecommended()})
+          // console.log(this.state.updatedRecommendation.length)
+      })
+  })
+}
+
+  populateShortlist = async () => {
+    let url = IP+':3000/api/Shortlists/userID?q='+this.state.userid;
+    await fetch(url)
+    .then((response)=>response.json())
+    .then((responseJson)=>{
+        let url = IP+':3000/api/job-posts/jobsArray'
+        try{
+            this.timer = fetch(url,{
+            method:'POST',
+            headers:{
+              'Accept':'application/json',
+              'Content-Type':'application/json',
+            },
+            body:JSON.stringify(responseJson.jobsforUserID)
+          }).then((jobResponse)=>jobResponse.json())
+            .then((finalResponse)=>{
+              // console.log(finalResponse)
+              if(this._isMounted){
+                // console.log(finalResponse.jobs.length!=0)
+                this.setState({shortlist:finalResponse.jobs,display:true})
+                this.getRecommended()
+                if(this.state.shortlist.length==0){
+                  this.setState({display:false})
+                }
+               }
+              // console.log(this.state.shortlist[0][0].title)
+            })
+          return responseJson.result;
+        }catch(error){
+          console.log(error)
+        }
+      }
+    );
+  }
+
+
+
+
+  componentDidMount = () => {
+    this._isMounted = true
+  }
+
+
+
+
   render() {
     return (
   <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-    <View style={styles.container}>
-      <View style={styles.headerStyle}>
-         <View style={{justifyContent:'center',alignItems:'center',backgroundColor:'red',width:50,height:50,borderRadius:7}}>
-           <Text style={{color:'white', fontSize:33,fontWeight:'bold'}}>J</Text>
-         </View>
-         <View style={{justifyContent:'center',alignItems:'center',backgroundColor:'green',width:50,height:50,borderRadius:7}}>
-           <Text style={{color:'white',fontSize:33,fontWeight:'bold'}}>O</Text>
-         </View>
-         <View style={{justifyContent:'center',alignItems:'center',backgroundColor:'blue',width:50,height:50,borderRadius:7}}>
-             <Text style={{color:'white',fontSize:33,fontWeight:'bold'}}>B</Text>
-         </View>
+    <ScrollView keyboardShouldPersistTaps='handled' contentContainerStyle={searchHomeStyle.container}>
+    <NavigationEvents
+    onWillFocus={payload=>{
+      if(this.state.userid){
+        this.populateShortlist()
+      }
+    }}
+    onWillBlur={payload=>{
+      this.setState({index:0})
+    }}
+    />
+      <View style={searchHomeStyle.searchView}>
+        <Image
+          style={{marginBottom:15,marginTop:25}}
+          source={require('../assets/LOGOside.png')}
+        />
+        <View style={{zIndex:2}}>
+          <MatIcon style={searchHomeStyle.icon} name='location-on' color='#45546d' size={32}/>
+          <Autocomplete
+           onBlur={()=>this.setState({predictions:[]})}
+           // containerStyle={{borderColor:'transparent'}}
+           style={searchHomeStyle.input}
+           listContainerStyle={searchHomeStyle.outsideInput}
+           listStyle={{maxHeight:120}}
+           autoCorrect={false}
+           inputContainerStyle={{borderColor:'transparent'}}
+           returnKeyType={'next'}
+           clearButtonMode={'while-editing'}
+           data={this.state.predictions}
+           defaultValue={this.state.location}
+           onChangeText={text => this.onChangeDestJOB(text)}
+           onSubmitEditing={()=>this.searchInput.focus()}
+           underlineColorAndroid='transparent'
+           placeholder='Where?'
+           renderItem={({ loc }) => (
+              <Text style={searchHomeStyle.textIn} onPress={() => this.setState({ location: loc,predictions:[] })}>
+                {loc}
+              </Text>
+            )}
+        />
+        </View>
+        <View style={{zIndex:1,marginTop:10}}>
+          <MatIcon style={searchHomeStyle.icon} name='search' color='#45546d' size={32}/>
+          <Autocomplete
+            style={searchHomeStyle.input}
+            listContainerStyle={searchHomeStyle.outsideInput}
+            listStyle={{maxHeight:90}}
+            onBlur={()=>this.setState({history:[]})}
+            autoCorrect={false}
+            inputContainerStyle={{borderColor:'transparent'}}
+            ref={(input)=>{this.searchInput = input}}
+            clearButtonMode='while-editing'
+            placeholder='Search position!'
+            onChangeText={(text) => this.getHistory(text)}
+            returnKeyType={'search'}
+            onSubmitEditing={()=>{
+              if(this.state.text==undefined || this.state.text.length==0){
+                alert('Invalid Input. Please fill the entry.');
+              }else{
+                this.props.navigation.push('findPage',{searchKey:this.state.text});
+                this.setState({text:''});
+            }
+            }}
+            data={this.state.history}
+            defaultValue={this.state.text}
+            renderItem={({ word }) => (
+               <Text style={[searchHomeStyle.textIn,{color:'purple'}]} onPress={() => this.setState({ text: word,history:[] })}>
+                 {word}
+               </Text>
+             )}
+          />
+        </View>
+        <Button title='Find Jobs' buttonStyle={searchHomeStyle.searchButton} titleStyle={searchHomeStyle.searchButTitle}/>
       </View>
-      <View style={{width:wp('100%'),margin:'3%',flexDirection:'row',justifyContent:'space-evenly'}}>
-        <Autocomplete
-         onBlur={()=>this.setState({predictions:[]})}
-         containerStyle={{borderWidth:2,borderColor:'gray',borderRadius:7,width:wp('39%'),height:45}}
-         style={{paddingHorizontal:7,paddingVertical:12,backgroundColor:'transparent',borderColor:'transparent'}}
-         listContainerStyle={{backgroundColor:'white',borderRadius:7}}
-         listStyle={{backgroundColor:'white',borderRadius:7,maxHeight:120}}
-         autoCorrect={false}
-         inputContainerStyle={{backgroundColor:'transparent',borderColor:'transparent'}}
-         returnKeyType={'next'}
-         clearButtonMode={'while-editing'}
-         data={this.state.predictions}
-         defaultValue={this.state.location}
-         onChangeText={text => this.onChangeDestJOB(text)}
-         onSubmitEditing={()=>this.searchInput.focus()}
-         placeholder='Enter location📍'
-         renderItem={({ loc }) => (
-            <Text style={{padding:7}} onPress={() => this.setState({ location: loc,predictions:[] })}>
-              {loc}
-            </Text>
-          )}
-        />
-        <Autocomplete
-        containerStyle={{borderWidth:2,borderColor:'gray',borderRadius:7,width:wp('39%'),height:45}}
-        style={{paddingHorizontal:7,paddingVertical:12,backgroundColor:'transparent',borderColor:'transparent'}}
-        listContainerStyle={{backgroundColor:'white',borderRadius:7}}
-        listStyle={{backgroundColor:'white',borderRadius:7,maxHeight:120}}
-        onBlur={()=>this.setState({history:[]})}
-        autoCorrect={false}
-        inputContainerStyle={{backgroundColor:'transparent',borderColor:'transparent'}}
-        ref={(input)=>{this.searchInput = input}}
-        clearButtonMode='while-editing'
-        placeholder='Search position!'
-        onChangeText={(text) => this.getHistory(text)}
-        returnKeyType={'search'}
-        onSubmitEditing={()=>{
-          if(this.state.text==undefined || this.state.text.length==0){
-            alert('Invalid Input. Please fill the entry.');
-          }else{
-            this.props.navigation.push('findPage',{searchKey:this.state.text});
-            this.setState({text:''});
-        }
-        }}
-        data={this.state.history}
-        defaultValue={this.state.text}
-        renderItem={({ word }) => (
-           <Text style={{padding:7,color:'purple'}} onPress={() => this.setState({ text: word,history:[] })}>
-             {word}
-           </Text>
-         )}
-        />
-        <Button
-        onPress={()=>{
-          // console.log(this.state.location)
-          if((this.state.text==null || this.state.text.length==0||this.state.text==null)&&(this.state.location==null || this.state.location.length==0)){
-            alert('Invalid Input. Please fill the entry.');
-          }else{
-            this.props.navigation.push('findPage',{searchKey:this.state.text,location:this.state.location});
-            this.setState({text:''});
-        }
-          }}
-        title='Find'
-        buttonStyle={{height:45,width:wp("12%")}}
-        // icon={<Icon name='safari' size={20} color='lightgray'/>}
-        // iconRight
-        type='clear'
-        />
-      </View>
-
-    </View>
+      <Divider/>
+      {!this.state.guest && this.state.display ?
+        <View>
+          <View style={searchHomeStyle.recomendations}>
+            <View style={searchHomeStyle.recommendTitle}>
+              <Button onPress={()=>this.setState({updatedRecommendation:this.updateRecommended()})}
+              type='clear' icon={<AntIcon name='reload1' color='black' size={25}/>}/>
+              <Text style={searchHomeStyle.recommendedText}>Recommended Jobs</Text>
+              <Button type='clear' title='View All' titleStyle={{color:'gray'}}/>
+            </View>
+            <View style={searchHomeStyle.recommendedJobs}>
+                {
+                  this.state.updatedRecommendation.map((l, i) => (
+                    <ListItem
+                      containerStyle={{borderBottomWidth:1,borderColor:'gray'}}
+                      key={i}
+                      leftIcon={<AntIcon name='linechart' color='#4f4338' size={30}/>}
+                      // chevron={true}
+                      rightTitle={l[0].location}
+                      rightTitleStyle={{fontSize:15,fontWeight:'600'}}
+                      rightSubtitle={Math.floor(this.getDaysPosted(l[0].date_post))>1?(Math.floor(this.getDaysPosted(l[0].date_post))==1?' 1 day ago':' '+ Math.floor(this.getDaysPosted(l[0].date_post))+' days ago'):' Today'}
+                      rightSubtitleStyle={{fontStyle:'italic'}}
+                      onPress = {()=>this.props.navigation.push('expandJob',{job:l[0],userid:this.state.userid})}
+                      rightIcon={<AntIcon name='right' color='gray' size={25}/>}
+                      title={l[0].title}
+                      titleStyle={{fontFamily:'Avenir',fontSize:18}}
+                      subtitle={l[0].company}
+                      subtitleStyle={{fontSize:14,color:'gray'}}
+                    />
+                  ))
+                }
+            </View>
+          </View>
+          <View style={searchHomeStyle.recomendations}>
+            <View style={searchHomeStyle.recommendTitle}>
+              <Text style={[{paddingLeft:15},searchHomeStyle.recommendedText]}>Recent Shortlisted</Text>
+              <Button onPress={()=>this.props.navigation.navigate('Shortlist')} type='clear' title='View All' titleStyle={{color:'gray'}}/>
+            </View>
+            <View style={searchHomeStyle.recommendedJobs}>
+                {
+                  this.state.shortlist.slice(0,3).map((l, i) => (
+                    <ListItem
+                      containerStyle={{borderBottomWidth:1,borderColor:'gray'}}
+                      key={i}
+                      rightTitle={l[0].location}
+                      rightTitleStyle={{fontSize:15,fontWeight:'600'}}
+                      rightSubtitle={Math.floor(this.getDaysPosted(l[0].date_post))>1?(Math.floor(this.getDaysPosted(l[0].date_post))==1?' 1 day ago':' '+ Math.floor(this.getDaysPosted(l[0].date_post))+' days ago'):' Today'}
+                      rightSubtitleStyle={{fontStyle:'italic'}}
+                      leftIcon={<MatIcon name='bookmark' color='#4f4338' size={30}/>}
+                      rightTitle={l[0].location}
+                      onPress = {()=>this.props.navigation.push('expandJob',{job:l[0],userid:this.state.userid})}
+                      rightIcon={<AntIcon name='right' color='gray' size={25}/>}
+                      title={l[0].title}
+                      titleStyle={{fontFamily:'Avenir',fontSize:18}}
+                      subtitle={l[0].company}
+                      subtitleStyle={{fontSize:14,color:'gray'}}
+                    />
+                  ))
+                }
+            </View>
+          </View>
+        </View>
+        :
+        null
+      }
+    </ScrollView>
   </TouchableWithoutFeedback>
+
+
     );
   }
 }
 
 export default Home;
-
-const styles = StyleSheet.create({
-  container:{
-    flex:1,
-    flexDirection:'column',
-    backgroundColor:"white",
-    borderRadius: 4,
-    borderWidth: 0.5,
-    borderColor: '#d6d7da',
-    alignItems:"center",
-    justifyContent:"center",
-  },
-  headerStyle:{
-    marginTop:'3%',
-    paddingTop:35,
-    flexDirection: 'row',
-    alignItems:'center',
-    alignSelf:'center',
-    justifyContent:'space-evenly',
-    flex:-1,
-    flexWrap:'nowrap',
-    width:'100%',
-    borderBottomWidth:2,
-    borderColor:'gray'
-  },
-  innerHeaderStyle:{
-    // marginHorizontal:'2%',
-    width:38,
-    height:38,
-    borderRadius:7,
-    alignItems:'center',
-    justifyContent:'center',
-  },
-  col:{
-    flex:1,
-    paddingVertical:10,
-    paddingHorizontal:15,
-    flexDirection:'column',
-    justifyContent:'space-between',
-    borderBottomWidth:6,
-    borderColor:'white',
-    shadowOpacity:0
-
-  },
-  jobTitle:{
-    padding:8,
-    color:'white',
-    fontSize:24,
-    fontWeight:'bold',
-    width:'100%',
-    paddingTop:5,
-    paddingBottom:5,
-    borderRadius:7,
-    overflow:'hidden'
-  },
-  jobTitleActually:{
-    flex:1,
-    flexDirection:'row',
-    width:'100%',
-    padding:5,
-    borderRadius:7,
-    paddingTop: 10
-  },
-  jobInfo:{
-    margin:12
-  },
-  jobInfoText:{
-    fontSize:14,
-  },
-
-
-});

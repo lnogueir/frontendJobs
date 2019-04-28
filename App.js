@@ -5,7 +5,7 @@ import {ThemeProvider,Button,Header} from 'react-native-elements';
 import {LinearGradient} from 'expo';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 // import Icon from 'react-native-vector-icons';
-import MatIcon from 'react-native-vector-icons/MaterialCommunityIcons';
+import MatIcon from 'react-native-vector-icons/MaterialIcons';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import EntIcon from 'react-native-vector-icons/Entypo';
 import helpers from './globalFunctions.js';
@@ -21,6 +21,7 @@ import AuthLoadingScreen from './screens/authloadingScreen.js';
 import expandJob from './screens/expandJob.js';
 import notificationJobsPage from './screens/notificationJobs.js';
 import notificationPage from './screens/notificationPage.js';
+import changePassword from './screens/changePassword.js';
 
 
 
@@ -129,8 +130,10 @@ const accountPageStack = createStackNavigator(
       headerForceInset:{top:'never',bottom:'never'}}},
     notificationJobsPage:{screen:notificationJobsExpandStack,navigationOptions:{
       headerStyle:{height:0},
-      headerForceInset:{top:'never',bottom:'never'}}}
+      headerForceInset:{top:'never',bottom:'never'}}},
+    changePassword:{screen:changePassword}
   }
+
 )
 
 
@@ -146,6 +149,7 @@ const homeFindStack = createStackNavigator(
     Home:{screen:Home,navigationOptions:{
       headerStyle:{height:0},
       headerForceInset:{top:'never',bottom:'never'}}},
+    expandJob:{screen:expandJob},
     findPage:{screen:findExpandStack,navigationOptions:{
       headerStyle:{height:0},
       headerForceInset:{top:'never',bottom:'never'}}},
@@ -168,21 +172,21 @@ homeFindStack.navigationOptions = ({ navigation }) => {
 
 const MainStack = createBottomTabNavigator(
   {
-    Search: {screen: homeFindStack,navigationOptions:()=>({
+    Home: {screen: homeFindStack,navigationOptions:()=>({
       tabBarIcon:({tintColor}) => (
-        <Icon
-          name="search"
+        <MatIcon
+          name="home"
           color={tintColor}
-          size={26}
+          size={32}
         />
       )
     })},
     Jobs: {screen: jobExpandStack,navigationOptions:({navigation})=>({
       tabBarIcon:({tintColor}) => (
-        <Icon
-        name="briefcase"
+        <MatIcon
+        name="business-center"
         color={tintColor}
-        size={26}
+        size={32}
         />
       )
     })},
@@ -198,10 +202,10 @@ const MainStack = createBottomTabNavigator(
         }
       },
       tabBarIcon:({tintColor}) => (
-        <Icon
-        name= "edit"/*"thumb-tack"*/
+        <MatIcon
+        name= "bookmark"/*"thumb-tack"*/
         color={tintColor}
-        size={26}
+        size={32}
         />
       )
 
@@ -216,7 +220,7 @@ const MainStack = createBottomTabNavigator(
           !navigation.getParam('guest',false)?
           (
             <MatIcon
-            name='account'
+            name='account-box'
             color={tintColor}
             size={32}
             />
@@ -247,7 +251,10 @@ const MainStack = createBottomTabNavigator(
     },
     iconStyle:{
       paddingRight:50
-    }
+    },
+    activeBackgroundColor:'#45546d',
+    inactiveBackgroundColor:'#45546d',
+    activeTintColor:'whitesmoke'
   },
   }
 )

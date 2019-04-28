@@ -1,23 +1,13 @@
 import React, {Component} from 'react';
-import {Platform,AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,Text, View,Image,StyleSheet} from 'react-native';
-import {NavigationEvents,createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
-import {ThemeProvider,Button,Header} from 'react-native-elements';
-import {LinearGradient} from 'expo';
+import {AsyncStorage,ActivityIndicator, TextInput,Alert,
+Linking,TouchableHighlight,FlatList,Text, View,Image} from 'react-native';
+import {NavigationEvents} from 'react-navigation';
+import {SearchBar,Button,Header} from 'react-native-elements';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-// import Icon from 'react-native-vector-icons';
+import MatIcon from 'react-native-vector-icons/MaterialIcons';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import {widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-  listenOrientationChange as loc,
-  removeOrientationListener as rol
-} from 'react-native-responsive-screen';
-import helpers from '../globalFunctions.js';
-import shortListPage from './shortlist.js';
-import loginPage from './login.js';
-import signupPage from './signup.js';
 import IP from '../constants/IP.js';
-// const IP = "http://192.168.0.16"
-// const IP = "http://172.20.10.6"
+import jobStyle from '../styles/jobStyle.js'
 
 class jobPage extends React.Component{
   constructor(props){
@@ -30,17 +20,12 @@ class jobPage extends React.Component{
         page:1,
         refreshing:false,
         prevPageSize:-1,
-        shortlist:{},
+        shortlist:[],
         location:null,
+        waiting:[]
       };
 
       this.isGuest();
-      setTimeout(()=>{
-        // console.log(this.state.guest)
-        if(!this.state.guest){
-            this.getUserid()
-        }
-      },1);
     }
 
 
@@ -50,6 +35,9 @@ class jobPage extends React.Component{
         const value = await AsyncStorage.getItem('userid');
         // console.log(value==null);
         this.setState({guest:value==null})
+        await this.getUserid()
+        this.getLocation()
+
       } catch (error) {
         // Error retrieving data
       }
@@ -80,15 +68,8 @@ class jobPage extends React.Component{
             }).then((jobResponse)=>jobResponse.json())
               .then((finalResponse)=>{
                 if(this._isMounted){
-                  let tempDic={}
-                  for(var i=0;i<finalResponse.jobs.length;i++){
-                    // console.log(finalResponse.jobs[i])
-                    tempDic[finalResponse.jobs[i][0].id]= finalResponse.jobs[i][0].id
-                  }
-                  this.setState({shortlist:tempDic})
-                  // this.setState({shortlist:finalResponse.jobs})
+                  this.setState({shortlist:finalResponse.jobs.map(job=>{return job[0].id}),waiting:this.state.waiting.map((entry)=>{return false})})
                  }
-                // console.log(this.state.shortlist[0][0].title)
               })
             return responseJson.result;
           }catch(error){
@@ -127,6 +108,7 @@ populateJobs = async () => {
   .then((responseJson)=>{
       this.setState(state=>({prevPageSize:responseJson.jobs.length,refreshing:false,
       jobs:this.state.jobs.concat(responseJson.jobs)}));
+      this.setState({waiting:new Array(this.state.jobs.length).fill(false)})
       if(!this.state.guest){
           this.populateShortlist()
       }
@@ -143,7 +125,7 @@ infiniteScroll = () => {
 
 
 refreshJobs = () => {
-  this.setState(state=>({refreshing:true,page:1,jobs:[]}),()=> this.populateJobs());
+  this.setState(state=>({refreshing:true,page:1,jobs:[]}),()=> this.getLocation());
 }
 
 getUserid = async () => {
@@ -151,6 +133,7 @@ getUserid = async () => {
    const value = await AsyncStorage.getItem('userid');
    if (value !== null) {
      this.setState({userid:value})
+
    }
  } catch (error) {
    // Error retrieving data
@@ -175,13 +158,11 @@ toShortlist = async (jobId) => {
      let responseJson = await response.json();
      if(responseJson.error!=undefined){
        alert("Sorry, something went wrong")
+
      }else{
-       let tempDic = {}
-       tempDic[jobId] = jobId
-       this.setState({shortlist:{...this.state.shortlist,...tempDic}})
-       // console.log(this.state.shortlist)
-       // this.populateShortlist()
+       this.setState({shortlist:[...this.state.shortlist,jobId]})
      }
+     this.setState({waiting:this.state.waiting.map((entry)=>{return false})})
      return responseJson.result;
    }catch(error){
      console.log(error)
@@ -189,169 +170,144 @@ toShortlist = async (jobId) => {
 }
 
   isJobInShortlist = (id) => {
-    return this.state.shortlist[id]==id
+    return this.state.shortlist.includes(id)
+  }
+
+  getDaysPosted = (date) => {
+    var curDate = new Date(Date())
+    var postedDate = new Date(date)
+    var days = (curDate - postedDate)/(1000*60*60*24);
+    return days
+  }
+
+
+  deleteShortlist = async (jobId,clearAll) =>{
+    let shortlistInfo={};
+    if(!clearAll){
+      shortlistInfo.userID = this.state.userid
+      shortlistInfo.jobID = jobId
+    }else{
+         shortlistInfo.userID=this.state.userid
+    }
+    if(this.state.shortlist.length!=0){
+     var url = IP+':3000/api/Shortlists/deleteShortList'
+     try{
+       let response = await fetch(url,{
+         method:'DELETE',
+         headers:{
+           'Accept':'application/json',
+           'Content-Type':'application/json',
+         },
+         body:JSON.stringify(shortlistInfo)
+       });
+       let responseJson = await response.json();
+       if(responseJson.error==undefined){
+           this.populateShortlist()
+       }else{
+         alert("Sorry, something went wrong")
+       }
+       return responseJson.result;
+     }catch(error){
+       console.log(error)
+     }
+   }else{
+     alert("Shortlist is empty.")
+   }
   }
 
 
 
-
   render(){
-    // this.populateShortlist()
       return (
-      <View style={styles.container}>
+      <View style={jobStyle.container}>
         <NavigationEvents
-        onWillFocus={payload=>{
-          this.setState({jobs:[]})
-          setTimeout(()=>{
-            // console.log(this.state.guest)
-            if(!this.state.guest){
-              // console.log(this.state.userid)
-              this.getLocation()
-            }else{
-              this.populateJobs()
+          onWillFocus={payload=>{
+            if(this._isMounted && !this.state.guest){
+              this.populateShortlist()
             }
-          },500)
-        }}
+          }}
         />
-        <View style={styles.headerStyle}>
-         <View style={[styles.innerHeaderStyle,{backgroundColor:'red'}]}>
-           <Text style={{color:'white', fontSize:25,fontWeight:'bold'}}>J</Text>
-         </View>
-         <View style={[styles.innerHeaderStyle,{backgroundColor:'green'}]}>
-           <Text style={{color:'white',fontSize:25,fontWeight:'bold'}}>O</Text>
-         </View>
-         <View style={[styles.innerHeaderStyle,{backgroundColor:'blue'}]}>
-            <Text style={{color:'white',fontSize:25,fontWeight:'bold'}}>B</Text>
-         </View>
-        </View>
-          <FlatList
+        <Header
+          backgroundColor='transparent'
+          leftComponent={<Image
+            style={{width:40,height:46}}
+            source={require('../assets/PlanetJobLogo.png')}
+          />}
+          centerComponent={{text:'Recent Jobs',style:jobStyle.headerFontStyle}}
+        />
+        <SearchBar
+          lightTheme
+          containerStyle={{backgroundColor:'#e5e7ea',borderColor:'transparent'}}
+          inputContainerStyle={{backgroundColor:'white'}}
+          placeholder='Search position'/>
+        <FlatList
           onEndReached={()=>this.infiniteScroll()}
           onEndReachedThreshold={0}
           data={this.state.jobs}
           refreshing = {this.state.refreshing}
           onRefresh={this.refreshJobs}
-          keyExtractor={(item,index) =>index.toString()}
-          style={{width:'100%',shadowOffSet:{width:0,height:0},shadowOpacity:0.2}}
           ListFooterComponent={() => this.state.prevPageSize!=15 ? null : <ActivityIndicator size='large' animating/>}
+          keyExtractor={(item,index) =>index.toString()}
+          style={jobStyle.flalistStyle}
           renderItem={({item,index}) => (
-              <View style={[styles.col,{shadowColor:helpers.getGradientColor(index)}]}>
-                <Text style={[styles.jobTitle,{backgroundColor:helpers.getBackgroundColor(index)}]}>{helpers.capitalize(item.title)}</Text>
-                <View style={styles.jobInfo}>
-                  <Text style={styles.jobInfoText}><Text style={{fontWeight:'bold',fontSize:16}}>Company:</Text> {item.company}</Text>
-                  <Text style={styles.jobInfoText}><Text style={{fontWeight:'bold',fontSize:16}}>Location:</Text> {item.location}<Text style={{fontWeight:'bold',fontSize:16}}>{'\t'}Salary:</Text> {item.salary}</Text>
-                  <Text style={styles.jobInfoText}>{'\n'}<Text style={{fontWeight:'bold',fontSize:16}}>Summary:</Text> {item.summary}{'\n'}</Text>
-                  <View style={{flexDirection:'row',justifyContent:'space-evenly',width:'100%'}}>
-                    <Button onPress ={() => {
+          <TouchableHighlight
+            underlayColor='white'
+            onPress = {()=>this.props.navigation.push('expandJob',{job:item,userid:this.state.userid})}
+          >
+            <View style={jobStyle.flatlistView}>
+              <View style={jobStyle.mainColumnView}>
+                <Text style={jobStyle.jobTitle}>{item.title}</Text>
+                <Button
+                disabledTitleStyle={jobStyle.colLinesTitle}
+                icon={<MatIcon name='business' color='#45546d' size={20}/>}
+                disabledStyle={jobStyle.colLines}
+                disabled type='clear' title={item.company}
+                />
+                <Button
+                disabledTitleStyle={jobStyle.colLinesTitle}
+                icon={<MatIcon name='location-on' color='#45546d' size={20}/>}
+                disabledStyle={jobStyle.colLines}
+                disabled type='clear' title={item.location}
+                />
+                <Button
+                disabledTitleStyle={jobStyle.colLinesTitle}
+                icon={<MatIcon name='monetization-on' color='#45546d' size={20}/>}
+                disabledStyle={jobStyle.colLines}
+                disabled type='clear' title={item.salary}
+                />
+                <View style={{flexDirection:'row'}}>
+                  <Button icon={<MatIcon name='query-builder' color='lightgray' size={15}/>}
+                  disabled disabledTitleStyle={{fontSize:14}}
+                  disabledStyle={{paddingRight:30,alignSelf:'auto'}}
+                  type='clear' title={Math.floor(this.getDaysPosted(item.date_post))>1?(Math.floor(this.getDaysPosted(item.date_post))==1?' 1 day ago':' '+ Math.floor(this.getDaysPosted(item.date_post))+' days ago'):' Today'}
+                  />
+                </View>
+              </View>
+              <Button
+              type='clear'
+              onPress ={() => {
                       if(!this.state.guest){
-                          this.toShortlist(item.id)
+                          this.setState({waiting:this.state.waiting.map((entry,i)=>{return i==index?true:false})})
+                          if(this.isJobInShortlist(item.id)){
+                              this.deleteShortlist(item.id,false)
+                          }else{
+                              this.toShortlist(item.id)
+                          }
                       }else{
                           alert("You must create an account in order to have a shortlist.")
                       }
                       }}
-                      titleStyle={{fontSize:17}}
-                      disabled={this.isJobInShortlist(item.id)}
-                      style={{height:46,width:wp('26.5%')}} icon={<Icon
-                      name={this.isJobInShortlist(item.id)?'check':'plus-circle'} color='#397af8' size={28}
-                      />}
-                      title={this.isJobInShortlist(item.id)?' Added':' Shortlist'}
-                      type='outline'
-                    />
-                    <Button
-                    titleStyle={{fontSize:17}}
-                    buttonStyle={{backgroundColor:'#66ccff'}}
-                    icon={<Icon name='expand' color='white' size={28}/>}
-                    style={{height:46,width:wp('26.5%')}}
-                    title='  Expand'
-                    onPress = {()=>{
-                      // console.log(index)
-                      this.props.navigation.push('expandJob',{job:item,userid:this.state.userid,display:false})
-                    }}
-                    />
-                    <Button titleStyle={{fontSize:17}} style={{color:'white', height:46,width:wp('26.5%')}} onPress={() => Linking.openURL(item.link)}
-                    icon={<Icon name='id-card' color='white' size={28}/>} title=' Apply!'/>
-                  </View>
-                </View>
-              </View>
-
+               // loading={this.state.waiting[index]}
+               icon={<MatIcon name={this.state.waiting[index]?(this.isJobInShortlist(item.id)?'exposure-neg-1':'exposure-plus-1'):this.isJobInShortlist(item.id)?'bookmark':'bookmark-border'} color='black' size={50}/>}
+               // icon={<MatIcon name={this.isJobInShortlist(item.id)?'bookmark':'bookmark-border'} color='black' size={50}/>}
+              />
+            </View>
+          </TouchableHighlight>
           )}
-          />
-        </View>
-
+        />
+      </View>
       );
     }
 }
 
 export default jobPage;
-
-
-const styles = StyleSheet.create({
-  container:{
-    flex:1,
-    flexDirection:'column',
-    backgroundColor:"white",
-    borderRadius: 4,
-    borderWidth: 0.5,
-    borderColor: '#d6d7da',
-    alignItems:"center",
-    justifyContent:"center",
-  },
-  headerStyle:{
-    marginTop:'3%',
-    paddingTop:35,
-    flexDirection: 'row',
-    alignItems:'center',
-    alignSelf:'center',
-    justifyContent:'space-evenly',
-    flex:-1,
-    flexWrap:'nowrap',
-    width:'100%',
-    borderBottomWidth:2,
-    borderColor:'gray'
-  },
-  innerHeaderStyle:{
-    // marginHorizontal:'2%',
-    width:38,
-    height:38,
-    borderRadius:7,
-    alignItems:'center',
-    justifyContent:'center',
-  },
-  col:{
-    flex:1,
-    paddingVertical:10,
-    paddingHorizontal:15,
-    flexDirection:'column',
-    justifyContent:'space-between',
-    borderBottomWidth:5,
-    borderColor:'lightgray',
-    shadowOpacity:0.2
-
-  },
-  jobTitle:{
-    padding:8,
-    color:'white',
-    fontSize:24,
-    fontWeight:'bold',
-    width:'100%',
-    paddingTop:5,
-    paddingBottom:5,
-    borderRadius:7,
-    overflow:'hidden'
-  },
-  jobTitleActually:{
-    flex:1,
-    flexDirection:'row',
-    width:'100%',
-    padding:5,
-    borderRadius:7,
-    paddingTop: 10
-  },
-  jobInfo:{
-    margin:12
-  },
-  jobInfoText:{
-    fontSize:14,
-  },
-
-
-});

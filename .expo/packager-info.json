@@ -1,10 +1,10 @@
 {
   "devToolsPort": 19002,
-  "expoServerPort": 19000,
-  "packagerPort": 19001,
-  "packagerPid": 50096,
-  "expoServerNgrokUrl": "https://ec-v7t.lnogueir.frontendjobs.exp.direct",
-  "packagerNgrokUrl": "https://packager.ec-v7t.lnogueir.frontendjobs.exp.direct",
-  "ngrokPid": 50120,
+  "expoServerPort": null,
+  "packagerPort": null,
+  "packagerPid": null,
+  "expoServerNgrokUrl": null,
+  "packagerNgrokUrl": null,
+  "ngrokPid": null,
   "webpackServerPort": null
 }

@@ -1,19 +1,13 @@
 import React, {Component} from 'react';
-import {Platform,AsyncStorage,ActivityIndicator, TextInput,Alert,
+import {AsyncStorage,TextInput,Alert,
   TouchableWithoutFeedback,Keyboard,
-  Linking,TouchableHighlight,TouchableOpacity
-  ,FlatList,AppRegistry,KeyboardAvoidingView,
-  ScrollView,Text,View,Image,StyleSheet} from 'react-native';
-import {NavigationActions,StackActions,createStackNavigator,createBottomTabNavigator, createAppContainer} from 'react-navigation';
-import {Divider,CheckBox,ThemeProvider,Button,Header} from 'react-native-elements';
-import {LinearGradient} from 'expo';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-// import Icon from 'react-native-vector-icons';
+  KeyboardAvoidingView,
+  Text,View,Image} from 'react-native';
+import {Input,Button,Header} from 'react-native-elements';
+import MatIcon from 'react-native-vector-icons/MaterialIcons';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import AntIcon from 'react-native-vector-icons/AntDesign';
-import helpers from '../globalFunctions.js';
-import signupPage from './signup.js';
 import IP from '../constants/IP.js';
+import loginStyle from '../styles/loginStyle.js'
 
 // const IP = "http://192.168.0.16"
 // const IP = "http://172.20.10.6"
@@ -44,7 +38,7 @@ class loginPage extends React.Component{
   static navigationOptions = ({navigation}) => {
     return {
       // headerLeft:<Button title=' Search' onPress={() => navigation.goBack()}/>,
-      title: 'Authentication'
+      title: 'Authentication',
     }
   }
 
@@ -161,77 +155,57 @@ class loginPage extends React.Component{
   render(){
     return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-    <KeyboardAvoidingView behavior='padding' style={{justifyContent:'flex-end'}}>
-      <View style={{flexDirection:'column',justifyContent:'space-between'}}>
-        <View style={{alignItems:'center',justifyContent:'center',marginVertical:'10%'}}>
-          <View style={styles.headerStyle}>
-           <View style={[styles.innerHeaderStyle,{backgroundColor:'red'}]}>
-             <Text style={{color:'white', fontSize:35,fontWeight:'bold'}}>J</Text>
-           </View>
-           <View style={[styles.innerHeaderStyle,{backgroundColor:'green'}]}>
-             <Text style={{color:'white',fontSize:35,fontWeight:'bold'}}>O</Text>
-           </View>
-           <View style={[styles.innerHeaderStyle,{backgroundColor:'blue'}]}>
-              <Text style={{color:'white',fontSize:35,fontWeight:'bold'}}>B</Text>
-           </View>
-          </View>
-        </View>
-        <View style={{alignItems:'center',justifyContent:'center'}}>
-          <Text style={{fontSize:23}}> Login to <Text style={{fontWeight:'bold',color:'red'}}>J</Text><Text style={{fontWeight:'bold',color:'green'}}>O</Text><Text style={{fontWeight:'bold',color:'blue'}}>B</Text> and get hired! </Text>
-        </View>
-        <View style={styles.login}>
-          <TextInput
-          returnKeyType={'next'}
-          clearButtonMode='while-editing'
-          style={{height:45,borderBottomWidth:2,borderColor:'gray',width:270,padding:7}}
-          placeholder='Username'
-          onChangeText={(text) => this.setState({username:text})}
-          value={this.state.username}
-          onSubmitEditing={()=>this.passwordInput.focus()}
-          blurOnSubmit={false}
-          />
-          <TextInput
-          returnKeyType={'go'}
-          onSubmitEditing={()=>this.handleLogin()}
-          ref={(input)=>{this.passwordInput = input}}
-          clearButtonMode='while-editing'
-          secureTextEntry={true}
-          style={{height:45,borderBottomWidth:2,borderColor:'gray',width:270,padding:7}}
-          placeholder='Password'
-          onChangeText={(text) => this.setState({password:text})}
-          value={this.state.password}
-          />
-        </View>
-          <View style={{width:'100%',justifyContent:'center',flexDirection:'row'}}>
-            <Button titleStyle={{fontSize:20}} style={{lineHeight:15}} type='clear' title='Forgot password?'/>
-            <Button titleStyle={{fontSize:20}} style={{lineHeight:15}} iconRight type='clear' icon={<AntIcon name='login' color='#397af8' size={26}/>}
-            title='Sign In    '
-            onPress={()=>{this.handleLogin()}}/>
-          </View>
-          <View style={{width:'100%',justifyContent:'center',alignItems:'center'}}>
-            <Text></Text>
-          </View>
-
-          <View style={{width:'100%',justifyContent:'center',alignItems:'center'}}>
-            <Text style={{color:'red'}}>{this.state.error}</Text>
-          </View>
-
-
-          <Button buttonStyle={{margin:15}} onPress={() => {this.props.navigation.navigate('signupPage')}} icon={
-            <Icon
-              name='user-circle'
-              size={25}
-              color='white'
-              />
-          }
-            style={{marginTop:'9%'}} title='  Create account'
+      <View style={loginStyle.container}>
+          <View style={loginStyle.logoContainer}>
+            <Image
+              style={loginStyle.logoStyle}
+              source={require('../assets/PlanetJobFull.png')}
             />
-            <Text style={{alignSelf:'center',color:'gray',fontSize:23}}>──────  Or  ──────</Text>
-            <Button onPress={()=>{this.props.navigation.navigate('accountPage',{guest:true})}} buttonStyle={{margin:15}} title="Enter as Guest" type="outline"/>
-
-
+          </View>
+          <View style={loginStyle.inputView}>
+            <Input
+              returnKeyType={'next'}
+              clearButtonMode='while-editing'
+              onChangeText={(text) => this.setState({username:text})}
+              value={this.state.username}
+              onSubmitEditing={()=>this.passwordInput.focus()}
+              blurOnSubmit={false}
+              autoCorrect={false}
+              inputStyle={loginStyle.inputStyle}
+              containerStyle={loginStyle.containerStyle}
+              leftIcon={<MatIcon name='account-circle' color='#45546d' size={32}/>}
+              placeholder='Username'
+              placeholderTextColor='#45546d'
+            />
+            <Input
+              returnKeyType={'go'}
+              onSubmitEditing={()=>this.handleLogin()}
+              ref={(input)=>{this.passwordInput = input}}
+              clearButtonMode='while-editing'
+              secureTextEntry={true}
+              autoCorrect={false}
+              onChangeText={(text) => this.setState({password:text})}
+              value={this.state.password}
+              inputStyle={loginStyle.inputStyle}
+              containerStyle={loginStyle.containerStyle}
+              leftIcon={<MatIcon name='lock' color='#45546d' size={32}/>}
+              placeholder='Password'
+              placeholderTextColor='#45546d'
+            />
+            <Text style={{color:'red'}}>{this.state.error}</Text>
+            <Text style={loginStyle.forgotStyle}>Forgot Password?</Text>
+          </View>
+          <View style={loginStyle.buttonViewLogin}>
+            <Button onPress={()=>this.handleLogin()}
+            buttonStyle={[loginStyle.buttonsStyle,{backgroundColor:'#1968e8'}]}
+            title='Sign in' titleStyle={loginStyle.buttonFontStyle}
+            />
+            <Button onPress={()=>this.props.navigation.navigate('signupPage')}
+            buttonStyle={[loginStyle.buttonsStyle,{backgroundColor:'#45546d'}]}
+            title='Create an Account' titleStyle={loginStyle.buttonFontStyle}
+            />
+          </View>
       </View>
-    </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );
 }
@@ -242,78 +216,3 @@ class loginPage extends React.Component{
 
 
 export default loginPage;
-
-
-const styles = StyleSheet.create({
-
-
-  container:{
-    flex:1,
-    flexDirection:'column',
-    backgroundColor:"white",
-    borderRadius: 4,
-    borderWidth: 0.5,
-    borderColor: '#d6d7da',
-    alignItems:"center",
-    justifyContent:"center",
-  },
-  login:{
-    alignItems:'center',
-    justifyContent: 'space-evenly',
-    marginTop:'4%'
-  },
-  headerStyle:{
-    marginTop:'3%',
-    paddingTop:35,
-    flexDirection: 'row',
-    alignItems:'center',
-    alignSelf:'center',
-    justifyContent:'space-evenly',
-    flex:-1,
-    flexWrap:'nowrap',
-    width:'100%',
-    shadowColor:'gray',
-    shadowOpacity:1,
-    shadowRadius:5,
-  },
-  innerHeaderStyle:{
-    // marginHorizontal:'2%',
-    width:60,
-    height:60,
-    borderRadius:7,
-    alignItems:'center',
-    justifyContent:'center',
-  },
-  col:{
-    flex:1,
-    paddingVertical:10,
-    paddingHorizontal:15,
-    flexDirection:'column',
-    justifyContent:'space-between',
-    borderBottomWidth:6,
-    borderColor:'white',
-    shadowOpacity:0
-
-  },
-  jobTitle:{
-    padding:10,
-    color:'white',
-    fontSize:22,
-    fontWeight:'bold',
-    // fontFamily:Platform.OS==='ios'?'Avenir':'Nunito',
-    width:'100%',
-    paddingTop:5,
-    paddingBottom:5,
-    borderRadius:7,
-    overflow:'hidden'
-  },
-  jobInfo:{
-    margin:12
-  },
-  jobInfoText:{
-    fontSize:14,
-  },
-
-
-
-});

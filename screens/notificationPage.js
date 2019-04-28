@@ -30,7 +30,11 @@ class notificationPage extends React.Component{
 
   static navigationOptions = ({navigation}) => {
     return {
-      headerLeft:<Button style={{width:wp('24%')}} onPress={()=>navigation.navigate('accountPage')} title=' Account' type='clear' icon={<Icon name='chevron-left' color='#397af8' size={28}/>}/>,
+      headerLeft:<Button style={{width:wp('24%')}} onPress={()=>navigation.navigate('accountPage')} title=' Account' type='clear' icon={<Icon name='chevron-left' color='#397af8' size={20}/>}/>,
+      headerRight:<Image
+        style={{width:40,height:46}}
+        source={require('../assets/PlanetJobLogo.png')}
+      />
     }
   }
 
@@ -105,7 +109,7 @@ class notificationPage extends React.Component{
     >
       <View style={{flexDirection:'column',height:hp('40%')}}>
           <View style={styles.row}>
-            <MatIcon style={{lineHeight:40}} name='location-on' color="red" size={42}/>
+            <MatIcon style={{lineHeight:40}} name='location-on' color="#1968e8" size={42}/>
             <Text style={styles.textStyle}>New jobs in my area</Text>
             <Switch style={styles.switchStyle}
             onValueChange={async()=>{
@@ -116,7 +120,7 @@ class notificationPage extends React.Component{
             />
           </View>
           <View style={styles.row}>
-            <AntIcon style={{lineHeight:40}} name='tags' color="green" size={42}/>
+            <MatIcon style={{lineHeight:40}} name='search' color="#45546d" size={42}/>
             <Text style={styles.textStyle}>New jobs with my tags</Text>
             <Switch
             style={styles.switchStyle}
@@ -128,7 +132,7 @@ class notificationPage extends React.Component{
             />
           </View>
           <View style={styles.row}>
-            <Icon style={{lineHeight:40}} name="thumb-tack" color="blue" size={42}/>
+            <MatIcon style={{lineHeight:40}} name="bookmark" color="black" size={42}/>
             <Text style={styles.textStyle}>Shortlist deadlines</Text>
             <Switch
             style={styles.switchStyle}
