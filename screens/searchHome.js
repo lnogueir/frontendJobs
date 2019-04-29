@@ -356,7 +356,15 @@ class Home extends React.Component{
              )}
           />
         </View>
-        <Button title='Find Jobs' buttonStyle={searchHomeStyle.searchButton} titleStyle={searchHomeStyle.searchButTitle}/>
+        <Button onPress={()=>{
+          if((this.state.text==null || this.state.text.length==0||this.state.text==null)&&(this.state.location==null || this.state.location.length==0)){
+            alert('Invalid Input. Please fill the entry.');
+          }else{
+            this.props.navigation.push('findPage',{searchKey:this.state.text,location:this.state.location});
+            this.setState({text:''});
+        }
+          }}
+        title='Find Jobs' buttonStyle={searchHomeStyle.searchButton} titleStyle={searchHomeStyle.searchButTitle}/>
       </View>
       <Divider/>
       {!this.state.guest && this.state.display ?

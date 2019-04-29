@@ -489,7 +489,7 @@ class accountPage extends React.Component{
                     this._signOutAsync()
                 }
               }}
-              buttonStyle={[accountStyle.buttonStyle,{backgroundColor:'red',width:200,height:50}]}
+              buttonStyle={[accountStyle.buttonStyle,{backgroundColor:'lightcoral',width:200,height:50}]}
               title='Logout'
               titleStyle={accountStyle.buttonTitleStyle}
               icon={<MatCIcon name="logout-variant" color="white" size={30}/>}

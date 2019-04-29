@@ -26,6 +26,7 @@ const expandStyle = StyleSheet.create({
   },
   rowView:{
     flexDirection:'row',
+    justifyContent:'space-evenly'
   },
   colLines:{
     paddingLeft:20

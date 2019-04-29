@@ -116,11 +116,9 @@ populateJobs = async () => {
 }
 
 infiniteScroll = () => {
-  setTimeout(()=>{
     if(this.state.jobs.length!=0){
       this.setState(state=> ({page:this.state.page+1}), () => this.populateJobs());
     }
-  },100);
 }
 
 
