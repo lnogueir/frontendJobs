@@ -12,7 +12,10 @@ import jobStyle from '../styles/jobStyle.js'
 class jobPage extends React.Component{
   constructor(props){
       _isMounted = false
+      origArrayHolder = []
+      searchArray = []
       super(props);
+      this.onEndReachedCalledDuringMomentum = true
       this.state={
         guest:null,
         userid:null,
@@ -21,9 +24,10 @@ class jobPage extends React.Component{
         prevPageSize:-1,
         shortlist:[],
         location:null,
-        waiting:[]
+        waiting:[],
+        isTyping:false,
+        search:''
       };
-
       this.isGuest();
     }
 
@@ -101,7 +105,7 @@ class jobPage extends React.Component{
 populateJobs = async () => {
   // console.log(this.state.location)
   // console.log(this.state.location.split(', '))
-  let url =this.state.location!=null
+  let url = this.state.location!=null&&this.state.location!=''
   ?
   IP+":3000/api/searches?q="+this.state.location.split(',')[0]+"&category=location&page="+this.state.page
   :
@@ -112,6 +116,11 @@ populateJobs = async () => {
   .then((responseJson)=>{
       this.setState(state=>({prevPageSize:responseJson.jobs.length,
       jobs:this.state.jobs.concat(responseJson.jobs)}));
+      if(!this.state.isTyping){
+          this.origArrayHolder = this.state.jobs
+      }
+      this.searchArray = []
+      this.populateSearch(1)
       this.setState({waiting:new Array(this.state.jobs.length).fill(false)})
       if(!this.state.guest){
           this.populateShortlist()
@@ -121,6 +130,7 @@ populateJobs = async () => {
 
 infiniteScroll = () => {
     if(this.state.jobs.length!=0){
+      // console.log('oh shit..')
       this.setState(state=> ({page:this.state.page+1}), () => this.populateJobs());
     }
 }
@@ -224,6 +234,34 @@ toShortlist = async (jobId) => {
   }
 
 
+  populateSearch = (index) => { //HOW TO LOOP THROUGH ASYNC CALLS
+    let url = this.state.location!=null&&this.state.location!=''? IP+":3000/api/searches?q="+this.state.location.split(',')[0]+"&category=location&page="+index.toString():IP+":3000/api/searches?q=&category=all&page="+index.toString()
+    fetch(url)
+    .then((response)=>response.json())
+    .then((responseJson)=>{
+      if(responseJson.jobs.length!=0){
+        this.searchArray = this.searchArray.concat(responseJson.jobs)
+        this.populateSearch(index+1);
+      }
+    })
+  }
+
+  searchFilter = (text) => {
+   if(text){
+     const newData = this.searchArray.filter(item => {
+       const itemData = `${item.title.toUpperCase()}
+       ${item.location.toUpperCase()} ${item.company.toUpperCase()}`;
+        const textData = text.toUpperCase();
+
+        return itemData.indexOf(textData) > -1;
+     });
+     this.setState({ jobs: newData,search:text });
+   }else{
+     this.setState({ jobs: this.origArrayHolder,search:text , isTyping:false});
+   }
+  }
+
+
 
   render(){
       return (
@@ -247,14 +285,32 @@ toShortlist = async (jobId) => {
           lightTheme
           containerStyle={{backgroundColor:'#e5e7ea',borderColor:'transparent'}}
           inputContainerStyle={{backgroundColor:'white'}}
-          placeholder='Search position'/>
+          style={{textAlign:'center'}}
+          placeholder='Filter jobs'
+          returnKeyType='done'
+          value={this.state.search}
+          showLoading={this.state.isTyping}
+          onChangeText={text => {
+                  this.setState({isTyping:true})
+                  this.searchFilter(text)
+                }}
+          onBlur={()=>this.setState({isTyping:false})}
+          onCancel={()=>this.setState({isTyping:false})}
+          onClear={()=>this.setState({isTyping:false})}
+          autoCorrect={false}
+          />
         <FlatList
-          onEndReached={()=>this.infiniteScroll()}
-          onEndReachedThreshold={1}
+          onEndReached={()=>{
+            if(!this.onEndReachedCalledDuringMomentum)
+              this.infiniteScroll()
+              this.onEndReachedCalledDuringMomentum=true
+          }}
+          onEndReachedThreshold={0.5}
+          onMomentumScrollBegin={() => { this.onEndReachedCalledDuringMomentum = false; }}
           data={this.state.jobs}
           refreshing = {false}
           onRefresh={this.refreshJobs}
-          ListFooterComponent={() => this.state.prevPageSize!=15 ? null : <ActivityIndicator size='large' animating/>}
+          ListFooterComponent={() => this.state.prevPageSize!=15 || this.state.jobs.length<15 ? null : <ActivityIndicator size='large' animating/>}
           keyExtractor={(item,index) =>index.toString()}
           style={jobStyle.flalistStyle}
           renderItem={({item,index}) => (

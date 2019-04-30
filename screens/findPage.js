@@ -195,20 +195,7 @@ class findPage extends React.Component{
     return days
   }
 
-  searchFilter = (text) => {
-   if(text){
-     const newData = this.arrayHolder.filter(item => {
-       const itemData = `${item[0].title.toUpperCase()}
-       ${item[0].location.toUpperCase()} ${item[0].company.toUpperCase()}`;
-        const textData = text.toUpperCase();
-
-        return itemData.indexOf(textData) > -1;
-     });
-     this.setState({ shortlist: newData,search:text });
-   }else{
-     this.setState({ shortlist: this.arrayHolder,search:text , isTyping:false});
-   }
-  }
+  
 
   isJobInShortlist = (id) => {
     return this.state.shortlist.includes(id)
@@ -263,11 +250,6 @@ class findPage extends React.Component{
             }
           }}
         />
-        <SearchBar
-          lightTheme
-          containerStyle={{backgroundColor:'#e5e7ea',borderColor:'transparent'}}
-          inputContainerStyle={{backgroundColor:'white'}}
-          placeholder='Filter results'/>
         <FlatList
           onEndReached={()=>this.infiniteScrollSearch()}
           onEndReachedThreshold={0}
@@ -312,11 +294,8 @@ class findPage extends React.Component{
             <Button
             type='clear'
             onPress ={() => {
-                    // console.log(this.isJobInShortlist(item.id))
-                    // console.log(this.state.shortlist)
                     if(!this.state.guest){
                         this.setState({waiting:this.state.waiting.map((entry,i)=>{return i==index?true:false})})
-                        console.log(this.state.waiting)
                         if(this.isJobInShortlist(item.id)){
                             this.deleteShortlist(item.id,false)
                         }else{
