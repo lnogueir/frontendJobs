@@ -64,9 +64,11 @@ class accountPage extends React.Component{
       email:null,
       profileID:null,
       predictions:[],
-      tag:null,
+      tag:'',
       isVisible:false,
       guest:this.props.navigation.getParam('guest',false),
+      locationNotiID:null,
+      tagNoti:null
     };
     // console.log(this.state.guest);
     if(this.state.guest){
@@ -82,7 +84,46 @@ class accountPage extends React.Component{
 
 
 
+  isNotificationActive = async () => {
+    let url = IP+":3000/api/notifications/userID?q="+this.state.userid;
+    await fetch(url)
+    .then((response)=>response.json())
+    .then((responseJson)=>{
+        // console.log(responseJson/*.notification[0].notificationType*/)
+        for(var i=0;i<responseJson.notification.length;i++){
+          if(responseJson.notification[i].notificationType=='location'){
+            this.setState({locationNotiID:responseJson.notification[i].id})
+          }
+          if(responseJson.notification[i].notificationType=='title'){
+              this.setState({tagNotiID:responseJson.notification[i].id})
+          }
+        }
+    })
+  }
 
+
+
+
+  makeNotifCall = body => {
+    let url = IP+":3000/api/notifications/customCreate";
+    try{
+    fetch(url,{
+      method:'POST',
+      headers:{
+        'Accept':'application/json',
+        'Content-Type':'application/json',
+      },
+      body:JSON.stringify(body)
+    })
+    .then(response=>{
+      if(response.status!=200){
+        alert("Error allowing notification 💩")
+      }
+    })
+    }catch(error){
+      console.log(error)
+    }
+  }
 
 
   getToken = async () => {
@@ -97,36 +138,33 @@ class accountPage extends React.Component{
       return;
     }
     let token = await Expo.Notifications.getExpoPushTokenAsync();
-    // console.log('Our token', token);
-    let url = IP+":3000/api/notifications/createNotification";
-    // console.log(this.state.userid);
-    let notificationInfo = {
-       userID: this.state.userid,
-       location: this.state.location.split(',')[0],
-       tag:'', // Trocar depois esta poha
-       token: token,
+    let notifications = [
+     {
+      userID: this.state.userid,
+      token: token,
+      notificationType:'location',
+      keywords:this.state.location.split(',')[0],
+      enabled:true
+    },
+    {
+      userID: this.state.userid,
+      token: token,
+      notificationType:'shortlist',
+      keywords:'shortlist',
+      enabled:true
+    },
+    {
+      userID: this.state.userid,
+      token: token,
+      notificationType:'title',
+      keywords:this.state.tag,
+      enabled:true
     }
-    try{
-      let response = await fetch(url,{
-        method:'POST',
-        headers:{
-          'Accept':'application/json',
-          'Content-Type':'application/json',
-        },
-        body:JSON.stringify(notificationInfo)
-      });
-      let responseJson = await response.json();
-      // console.log(responseJson)
-      if(responseJson.error!=undefined){
-        alert("Error allowing notification 💩")
-      }
-      return responseJson.result;
-    }catch(error){
-      console.log(error)
-    }
-
-
+  ]
+  for(var i=0;i<notifications.length;i++){
+    this.makeNotifCall(notifications[i])
   }
+}
 
   componentWillUnmount = () => {
     this.listener && this.listener.remove();
@@ -163,8 +201,7 @@ class accountPage extends React.Component{
         [
           {text:'No', onPress:()=>{resolve('NO')}},
           {text:'Yes',onPress:async()=>{
-            await this.getUserInfo();
-            this.getToken();
+            await this.getToken();
             await AsyncStorage.setItem('notification', 'true');
             this.listener = Expo.Notifications.addListener(this.handleNotification);
             this.props.navigation.navigate('notificationPage')
@@ -182,6 +219,7 @@ class accountPage extends React.Component{
      if (value !== null) {
        this.setState({userid:value})
        this.getUserInfo()
+       this.isNotificationActive()
      }
    } catch (error) {
      // Error retrieving data
@@ -214,7 +252,7 @@ class accountPage extends React.Component{
  callAlertNavigate = async (dest) => {
    await this.asyncAlert(false).then((response)=>{
      if(response){
-       this.editUserInfo()
+       this.editUserInfo(null)
      }
      this.setState({edit:false})
      this.props.navigation.navigate(dest)
@@ -250,9 +288,8 @@ class accountPage extends React.Component{
   }
 
 
-  editUserInfo = async () => {
+  editUserInfo = async (flag) => { //If flag=true then updating location noti,else update tags noti
     let url = IP+":3000/api/profiles/updateprofile";
-    // console.log(this.state.userid)
     console.log(this.tagArray)
     let editInfo = {
       userID:this.state.userid,
@@ -277,29 +314,34 @@ class accountPage extends React.Component{
         alert("The email or username you have entered already exists. 💩")
         this.getUserInfo()
       }else{
-        url = IP+":3000/api/notifications/updateNotification";
-        let updatedInfo = {
-          userID:this.state.userid,
-          location:this.state.location.split(',')[0],
-          tag:null
+        if(flag!=null){
+          let updatedInfo
+          if(flag){
+            updatedInfo = {
+              id:this.state.locationNotiID,
+              notificationType:'location',
+              keywords:this.state.location.split(',')[0],
+              userID:this.state.userid
+            }
+          }else{
+            updatedInfo = {
+              id:this.state.tagNotiID,
+              notificationType:'title',
+              keywords:this.tagArray.join(','),
+              userID:this.state.userid
+            }
+            console.log(updatedInfo)
+          }
+          this.makeNotifCall(updatedInfo)
         }
-        let finalResponse = await fetch(url,{
-          method:'POST',
-          headers:{
-            'Accept':'application/json',
-            'Content-Type':'application/json',
-          },
-          body:JSON.stringify(updatedInfo)
-        });
-        responseJson = await finalResponse.json()
         this.getUserInfo()
-        console.log(responseJson)
       }
       return responseJson.result;
     }catch(error){
       console.log(error)
     }
   }
+
 
   allowNotifications = () =>{
       this.getToken();
@@ -330,6 +372,7 @@ class accountPage extends React.Component{
           onDidFocus={payload=>{
             if(this.state.userid && !this.state.edit && !this.state.guest){
                 this.getUserInfo()
+                this.isNotificationActive()
             }
           }}
           onWillBlur={payload=>{
@@ -346,27 +389,35 @@ class accountPage extends React.Component{
             height='38%'
             windowBackgroundColor="rgba(255, 255, 255, .5)"
             onBackdropPress={() => {
-              this.editUserInfo()
+              this.getUserInfo()
               this.setState({ isVisible: false })
             }}
             overlayBackgroundColor="#45546d"
           >
           <View stlye={{margin:10,justifyContent:'center',alignItems:'center'}}>
-            <Text style={accountStyle.overlayTitle}>Your tags:</Text>
+            <View style={{flexDirection:'row',justifyContent:'space-between'}}>
+              <Text style={accountStyle.overlayTitle}>Your tags:</Text>
+              <Button onPress={()=>{
+                this.editUserInfo(false)
+                this.setState({isVisible:false})
+              }}
+              title='Save' buttonStyle={{backgroundColor:'white',borderRadius:30,height:40,width:100}} titleStyle={{color:'#1968e8',fontWeight:'600'}}/>
+            </View>
             <Tags
+              style={{margin:10}}
               containerStyle={{margin:10}}
               textInputProps={{
                  containerStyle:{borderRadius:20},
                  autoFocus:true,
                  returnKeyType:'done',
                  onSubmitEditing:()=>{
-                   this.editUserInfo()
+                   // this.editUserInfo()
                    this.setState({ isVisible: false })
                  }
                }}
                initialTags={this.state.tag?this.state.tag.split(','):[]}
                onChangeTags={tags => {
-                 this.tagArray = tags
+                 this.tagArray = tags//Array.from(new Set(tags))
                }}
                maxNumberOfTags={15}
                deleteTagOnPress={true}
@@ -390,7 +441,7 @@ class accountPage extends React.Component{
           centerComponent={{text:'Profile',style:accountStyle.headerFontStyle}}
           rightComponent={<Button onPress={()=>{
             if(this.state.edit){
-              this.editUserInfo();
+              this.editUserInfo(true);
             }
             this.setState({edit:!this.state.edit})
 
@@ -409,7 +460,7 @@ class accountPage extends React.Component{
                 value={this.state.username}
                 inputStyle={accountStyle.inputStyle}
                 containerStyle={accountStyle.containerStyle}
-                leftIcon={<MatIcon name='account-circle' color='#45546d' size={34}/>}
+                leftIcon={<MatIcon name='account-circle' color='blue' size={34}/>}
                 placeholder='Username'
                 placeholderTextColor='#45546d'
               />
@@ -421,7 +472,7 @@ class accountPage extends React.Component{
                 value={this.state.email}
                 inputStyle={accountStyle.inputStyle}
                 containerStyle={accountStyle.containerStyle}
-                leftIcon={<MatIcon name='mail' color='#45546d' size={34}/>}
+                leftIcon={<MatIcon name='mail' color='blue' size={34}/>}
                 placeholder='example@email.com'
                 placeholderTextColor='#45546d'
               />

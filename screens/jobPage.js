@@ -18,7 +18,6 @@ class jobPage extends React.Component{
         userid:null,
         jobs:[],
         page:1,
-        refreshing:false,
         prevPageSize:-1,
         shortlist:[],
         location:null,
@@ -106,7 +105,7 @@ populateJobs = async () => {
   await fetch(url)
   .then((response)=>response.json())
   .then((responseJson)=>{
-      this.setState(state=>({prevPageSize:responseJson.jobs.length,refreshing:false,
+      this.setState(state=>({prevPageSize:responseJson.jobs.length,
       jobs:this.state.jobs.concat(responseJson.jobs)}));
       this.setState({waiting:new Array(this.state.jobs.length).fill(false)})
       if(!this.state.guest){
@@ -123,7 +122,7 @@ infiniteScroll = () => {
 
 
 refreshJobs = () => {
-  this.setState(state=>({refreshing:true,page:1,jobs:[]}),()=> this.getLocation());
+  this.setState(state=>({page:1,jobs:[]}),()=> this.getLocation());
 }
 
 getUserid = async () => {
@@ -240,9 +239,9 @@ toShortlist = async (jobId) => {
           placeholder='Search position'/>
         <FlatList
           onEndReached={()=>this.infiniteScroll()}
-          onEndReachedThreshold={0}
+          onEndReachedThreshold={1}
           data={this.state.jobs}
-          refreshing = {this.state.refreshing}
+          refreshing = {false}
           onRefresh={this.refreshJobs}
           ListFooterComponent={() => this.state.prevPageSize!=15 ? null : <ActivityIndicator size='large' animating/>}
           keyExtractor={(item,index) =>index.toString()}

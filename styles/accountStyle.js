@@ -82,7 +82,7 @@ const accountStyle = StyleSheet.create({
     padding:25
   },
   listItemTitle:{fontWeight:'600',fontFamily:Platform.OS=='ios'?'Avenir':null,fontSize:20},
-  overlayTitle:{color:'white',fontFamily:'Avenir',fontSize:21,fontWeight:'600'},
+  overlayTitle:{color:'white',fontFamily:'Avenir',fontSize:23,fontWeight:'600',lineHeight:40},
 
 })
 

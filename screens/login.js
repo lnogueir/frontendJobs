@@ -21,7 +21,8 @@ class loginPage extends React.Component{
     checked:false,
     error:'',
     userid:null,
-    location:null
+    location:null,
+    tag:null
   };
   }
 
@@ -43,6 +44,28 @@ class loginPage extends React.Component{
   }
 
 
+  makeNotifCall = body => {
+    let url = IP+":3000/api/notifications/customCreate";
+    try{
+    fetch(url,{
+      method:'POST',
+      headers:{
+        'Accept':'application/json',
+        'Content-Type':'application/json',
+      },
+      body:JSON.stringify(body)
+    })
+    .then(response=>{
+      if(response.status!=200){
+        alert("Error allowing notification 💩")
+      }
+    })
+    }catch(error){
+      console.log(error)
+    }
+  }
+
+
   getToken = async () => {
     // Remote notifications do not work in simulators, only on device
     if (!Expo.Constants.isDevice) {
@@ -55,34 +78,33 @@ class loginPage extends React.Component{
       return;
     }
     let token = await Expo.Notifications.getExpoPushTokenAsync();
-    // console.log('Our token', token);
-    let url = IP+":3000/api/notifications/createNotification";
-    // console.log(this.state.userid);
-    let notificationInfo = {
-       userID: this.state.userid,
-       location: this.state.location.split(',')[0],
-       tag:'', // Trocar depois esta poha
-       token: token,
+    let notifications = [
+     {
+      userID: this.state.userid,
+      token: token,
+      notificationType:'location',
+      keywords:this.state.location.split(',')[0],
+      enabled:true
+    },
+    {
+      userID: this.state.userid,
+      token: token,
+      notificationType:'shortlist',
+      keywords:'shortlist',
+      enabled:true
+    },
+    {
+      userID: this.state.userid,
+      token: token,
+      notificationType:'title',
+      keywords:this.state.tag,
+      enabled:true
     }
-    try{
-      let response = await fetch(url,{
-        method:'POST',
-        headers:{
-          'Accept':'application/json',
-          'Content-Type':'application/json',
-        },
-        body:JSON.stringify(notificationInfo)
-      });
-      let responseJson = await response.json();
-      console.log(responseJson)
-      if(responseJson.error!=undefined){
-        alert("Error allowing notification 💩")
-      }
-      return responseJson.result;
-    }catch(error){
-      console.log(error)
-    }
+  ]
+  for(var i=0;i<notifications.length;i++){
+    this.makeNotifCall(notifications[i])
   }
+}
 
 
 
@@ -91,8 +113,8 @@ class loginPage extends React.Component{
     await fetch(url)
     .then((response)=>response.json())
     .then((responseJson)=>{
-        // console.log(responseJson)
-        this.setState(state=>({location:responseJson.profile[0].location}));
+        console.log(responseJson)
+        this.setState(state=>({tag:responseJson.profile[0].tag,location:responseJson.profile[0].location}));
     })
   }
 
