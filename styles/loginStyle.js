@@ -65,6 +65,11 @@ const loginStyle=StyleSheet.create({
     fontWeight:'500',
     fontSize:20,
     color:'#45546d'
+  },
+  guest:{
+    fontSize:17,
+    fontFamily:Platform.OS=='ios'?'Avenir':null,
+    color:'gray',
   }
 
 

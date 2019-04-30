@@ -70,7 +70,7 @@ class Home extends React.Component{
       updatedRecommendation:[],
       display:true,
   };
-  this.isGuest()
+  this.getUserid()
 
   }
 
@@ -84,6 +84,8 @@ class Home extends React.Component{
        if(permission=='true'){
          this.listener = Expo.Notifications.addListener(this.handleNotification);
        }
+     }else{
+       this.setState({guest:true})
      }
    } catch (error) {
      // Error retrieving data
@@ -184,17 +186,6 @@ class Home extends React.Component{
     return updatedRecommendation
   }
 
-  isGuest = async () => {
-    try {
-      const value = await AsyncStorage.getItem('userid');
-      // console.log(value==null);
-      this.setState({guest:value==null})
-      await this.getUserid()
-
-    } catch (error) {
-      // Error retrieving data
-    }
-  }
 
   getDaysPosted = (date) => {
     var curDate = new Date(Date())

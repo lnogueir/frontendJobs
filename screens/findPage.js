@@ -51,7 +51,9 @@ class findPage extends React.Component{
       this.setState({guest:value==null})
       if(!this.state.guest){
         this.getUserid()
-  }
+      }else{
+        this.populateSearch()
+      }
 }
 
 
@@ -168,7 +170,9 @@ class findPage extends React.Component{
           this.setState(state=>({display:true,prevPageSize:responseJson.jobs.length,
           searchData:this.state.searchData.concat(responseJson.jobs)}));
           this.setState({waiting:new Array(this.state.searchData.length).fill(false)})
-          this.populateShortlist()
+          if(!this.state.guest){
+              this.populateShortlist()
+          }
         }else{
           if(this.state.searchData.length==0){
             this.setState({display:false});
@@ -323,7 +327,7 @@ class findPage extends React.Component{
                     }
                     }}
              // loading={this.state.waiting[index]}
-             icon={<MatIcon name={this.state.waiting[index]?(this.isJobInShortlist(item.id)?'exposure-neg-1':'exposure-plus-1'):this.isJobInShortlist(item.id)?'bookmark':'bookmark-border'} color='black' size={50}/>}
+             icon={<MatIcon name={this.state.guest?'bookmark-border':this.state.waiting[index]?(this.isJobInShortlist(item.id)?'exposure-neg-1':'exposure-plus-1'):this.isJobInShortlist(item.id)?'bookmark':'bookmark-border'} color='black' size={50}/>}
              // icon={<MatIcon name={this.isJobInShortlist(item.id)?'bookmark':'bookmark-border'} color='black' size={50}/>}
             />
           </View>

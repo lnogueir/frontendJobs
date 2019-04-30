@@ -226,6 +226,7 @@ class loginPage extends React.Component{
             buttonStyle={[loginStyle.buttonsStyle,{backgroundColor:'#45546d'}]}
             title='Create an Account' titleStyle={loginStyle.buttonFontStyle}
             />
+            <Text style={loginStyle.guest}>Enter as a <Text style={{fontWeight:'700',textDecorationLine:'underline'}} onPress={()=>this.props.navigation.navigate('accountPage',{guest:true})}>GUEST</Text></Text>
           </View>
       </View>
     </TouchableWithoutFeedback>

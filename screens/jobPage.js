@@ -34,8 +34,13 @@ class jobPage extends React.Component{
         const value = await AsyncStorage.getItem('userid');
         // console.log(value==null);
         this.setState({guest:value==null})
-        await this.getUserid()
-        this.getLocation()
+        if(!this.state.guest){
+          await this.getUserid()
+          this.getLocation()
+        }else{
+          this.populateJobs()
+        }
+
 
       } catch (error) {
         // Error retrieving data
@@ -122,7 +127,13 @@ infiniteScroll = () => {
 
 
 refreshJobs = () => {
-  this.setState(state=>({page:1,jobs:[]}),()=> this.getLocation());
+  this.setState(state=>({page:1,jobs:[]}),()=>{
+      if(!this.state.guest){
+          this.getLocation()
+      }else{
+        this.populateJobs()
+      }
+   });
 }
 
 getUserid = async () => {
@@ -295,7 +306,7 @@ toShortlist = async (jobId) => {
                       }
                       }}
                // loading={this.state.waiting[index]}
-               icon={<MatIcon name={this.state.waiting[index]?(this.isJobInShortlist(item.id)?'exposure-neg-1':'exposure-plus-1'):this.isJobInShortlist(item.id)?'bookmark':'bookmark-border'} color='black' size={50}/>}
+               icon={<MatIcon name={this.state.guest?'bookmark-border':this.state.waiting[index]?(this.isJobInShortlist(item.id)?'exposure-neg-1':'exposure-plus-1'):this.isJobInShortlist(item.id)?'bookmark':'bookmark-border'} color='black' size={50}/>}
                // icon={<MatIcon name={this.isJobInShortlist(item.id)?'bookmark':'bookmark-border'} color='black' size={50}/>}
               />
             </View>
