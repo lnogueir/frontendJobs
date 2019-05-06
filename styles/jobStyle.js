@@ -19,7 +19,7 @@ const jobStyle = StyleSheet.create({
     width:'100%',
   },
   headerFontStyle:{
-    fontFamily:Platform.OS==='ios'?'Avenir':null,
+    fontFamily:Platform.OS==='ios'?'Avenir':"sans-serif",
     fontWeight:'500',color:'#1968e8',
     fontSize:20,opacity:0.9
   },
@@ -41,8 +41,8 @@ const jobStyle = StyleSheet.create({
     margin:10
   },
   jobTitle:{
-    fontFamily:Platform.OS==='ios'?'Avenir':null,
-    fontSize:20,
+    fontFamily:Platform.OS==='ios'?'Avenir':"sans-serif-condensed",
+    fontSize:22,
     fontWeight:'bold',
   },
   colLines:{

@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,
+import {Platform,AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,
   TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,Text,
   View,Image} from 'react-native';
 import {NavigationEvents} from 'react-navigation';
@@ -36,7 +36,7 @@ class findPage extends React.Component{
     const search = navigation.getParam('searchKey',null)==null||navigation.getParam('searchKey',null)==''?navigation.getParam('location'):navigation.getParam('searchKey');
     // console.log(search)
     return {
-      headerLeft:<Button onPress={()=>navigation.navigate('Home')} title='Search' type='clear' icon={<Icon name='chevron-left' color='#397af8' size={20}/>}/>,
+      headerLeft:Platform.OS=='ios'?<Button onPress={()=>navigation.navigate('Home')} title='Search' type='clear' icon={<Icon name='chevron-left' color='#397af8' size={20}/>}/>:null,
       title: 'Results for "'+search+'":',
       headerRight: <Image
         style={{width:40,height:46}}
@@ -195,7 +195,7 @@ class findPage extends React.Component{
     return days
   }
 
-  
+
 
   isJobInShortlist = (id) => {
     return this.state.shortlist.includes(id)

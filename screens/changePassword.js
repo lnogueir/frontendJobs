@@ -1,8 +1,8 @@
 import React, {Component} from 'react';
-import {Button,Platform,AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,
+import {Platform,AsyncStorage,ActivityIndicator, TextInput,Alert,Linking,
   TouchableHighlight,TouchableOpacity,FlatList,AppRegistry,ScrollView,Text,
   View,Image,StyleSheet} from 'react-native';
-import {Input} from 'react-native-elements';
+import {Button,Input} from 'react-native-elements';
 import {LinearGradient} from 'expo';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -22,7 +22,7 @@ class changePassword extends React.Component{
   static navigationOptions = ({navigation}) => {
     return {
       title: 'Change Password',
-      headerRight:<Button onPress={()=>{console.log('')}} title='Save'/>
+      headerRight:<Button type='clear' onPress={()=>{console.log('')}} title='Save'/>
     }
   }
 

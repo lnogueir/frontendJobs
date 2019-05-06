@@ -19,7 +19,7 @@ const loginStyle=StyleSheet.create({
       backgroundColor:'#1968e8',
     },
     headerFontStyle:{
-      fontFamily:Platform.OS==='ios'?'Avenir':null,
+      fontFamily:Platform.OS =='ios'?'Avenir':'sans-serif-condensed',
       fontWeight:'500',color:'white',
       fontSize:20,opacity:0.9
     },
@@ -58,17 +58,17 @@ const loginStyle=StyleSheet.create({
   buttonsStyle:{borderRadius:30,
     width:wp('70%')},
 
-  buttonFontStyle:{fontFamily:Platform.OS==='ios'?'Avenir':null,fontWeight:'bold',fontSize:25},
+  buttonFontStyle:{fontFamily:Platform.OS =='ios'?'Avenir':'sans-serif-condensed',fontWeight:'bold',fontSize:25},
 
   forgotStyle:{
-    fontFamily:Platform.OS=='ios'?'Avenir':null,
+    fontFamily:Platform.OS =='ios'?'Avenir':'sans-serif-condensed',
     fontWeight:'500',
     fontSize:20,
     color:'#45546d'
   },
   guest:{
     fontSize:17,
-    fontFamily:Platform.OS=='ios'?'Avenir':null,
+    fontFamily:Platform.OS =='ios'?'Avenir':'sans-serif-condensed',
     color:'gray',
   }
 

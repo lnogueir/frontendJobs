@@ -14,7 +14,7 @@ const accountStyle = StyleSheet.create({
     flex:1,
   },
   headerFontStyle:{
-      fontFamily:Platform.OS==='ios'?'Avenir':null,
+      fontFamily:Platform.OS =='ios'?'Avenir':'sans-serif-condensed',
       fontWeight:'500',color:'#1968e8',
       fontSize:20,opacity:0.9
   },
@@ -23,7 +23,7 @@ const accountStyle = StyleSheet.create({
     justifyContent:'space-evenly'
   },
   accountInfoTitle:{
-    fontFamily:Platform.OS=='ios'?'Avenir':null,
+    fontFamily:Platform.OS =='ios'?'Avenir':'sans-serif-condensed',
     fontSize:32,
     fontWeight:'700',
     padding:15
@@ -42,7 +42,7 @@ const accountStyle = StyleSheet.create({
     alignSelf:'center'
   },
   buttonTitleStyle:{
-    fontFamily:Platform.OS=='ios'?'Avenir':null,
+    fontFamily:Platform.OS =='ios'?'Avenir':'sans-serif-condensed',
     fontSize:20,
     fontWeight:'bold'
   },
@@ -81,8 +81,8 @@ const accountStyle = StyleSheet.create({
     // width:wp('85%')
     padding:25
   },
-  listItemTitle:{fontWeight:'600',fontFamily:Platform.OS=='ios'?'Avenir':null,fontSize:20},
-  overlayTitle:{color:'white',fontFamily:'Avenir',fontSize:23,fontWeight:'600',lineHeight:40},
+  listItemTitle:{fontWeight:'600',fontFamily:Platform.OS =='ios'?'Avenir':'sans-serif-condensed',fontSize:20},
+  overlayTitle:{color:'white',fontFamily:Platform.OS =='ios'?'Avenir':'sans-serif-condensed',fontSize:23,fontWeight:'600',lineHeight:40},
 
 })
 

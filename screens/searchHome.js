@@ -195,7 +195,7 @@ class Home extends React.Component{
   }
 
   getRecommended = () => {
-    let url = 'http://127.0.0.1:5000/recommendation'
+    let url = 'http://134.209.59.58:5000/recommendation'
     var data={
       jobsID:this.state.shortlist.map(job=>{return job[0].id})
     }
@@ -286,17 +286,86 @@ class Home extends React.Component{
       this.setState({index:0})
     }}
     />
-      <View style={searchHomeStyle.searchView}>
-        <Image
-          style={{marginBottom:15,marginTop:25}}
-          source={require('../assets/LOGOside.png')}
+    {Platform.OS=='ios'?
+    <View style={searchHomeStyle.searchView}>
+      <Image
+        style={{marginBottom:15,marginTop:25}}
+        source={require('../assets/LOGOside.png')}
+      />
+      <View style={{zIndex:2}}>
+        <MatIcon style={searchHomeStyle.icon} name='location-on' color='#45546d' size={32}/>
+        <Autocomplete
+         onBlur={()=>this.setState({predictions:[]})}
+         style={searchHomeStyle.input}
+         listContainerStyle={searchHomeStyle.outsideInput}
+         listStyle={{maxHeight:120}}
+         autoCorrect={false}
+         inputContainerStyle={{borderColor:'transparent'}}
+         returnKeyType={'next'}
+         clearButtonMode={'while-editing'}
+         data={this.state.predictions}
+         defaultValue={this.state.location}
+         onChangeText={text => this.onChangeDestJOB(text)}
+         onSubmitEditing={()=>this.searchInput.focus()}
+         underlineColorAndroid='transparent'
+         placeholder='Where?'
+         renderItem={({ loc }) => (
+            <Text style={searchHomeStyle.textIn} onPress={() => this.setState({ location: loc,predictions:[] })}>
+              {loc}
+            </Text>
+          )}
+      />
+      </View>
+      <View style={{zIndex:1,marginTop:10}}>
+        <MatIcon style={searchHomeStyle.icon} name='search' color='#45546d' size={32}/>
+        <Autocomplete
+          style={searchHomeStyle.input}
+          listContainerStyle={searchHomeStyle.outsideInput}
+          listStyle={{maxHeight:90}}
+          onBlur={()=>this.setState({history:[]})}
+          autoCorrect={false}
+          inputContainerStyle={{borderColor:'transparent'}}
+          ref={(input)=>{this.searchInput = input}}
+          clearButtonMode='while-editing'
+          placeholder='Search position!'
+          onChangeText={(text) => this.getHistory(text)}
+          returnKeyType={'search'}
+          onSubmitEditing={()=>{
+            if(this.state.text==undefined || this.state.text.length==0){
+              alert('Invalid Input. Please fill the entry.');
+            }else{
+              this.props.navigation.push('findPage',{searchKey:this.state.text});
+              this.setState({text:''});
+          }
+          }}
+          data={this.state.history}
+          defaultValue={this.state.text}
+          renderItem={({ word }) => (
+             <Text style={[searchHomeStyle.textIn,{color:'purple'}]} onPress={() => this.setState({ text: word,history:[] })}>
+               {word}
+             </Text>
+           )}
         />
-        <View style={{zIndex:2}}>
-          <MatIcon style={searchHomeStyle.icon} name='location-on' color='#45546d' size={32}/>
-          <Autocomplete
+      </View>
+      <Button onPress={()=>{
+        if((this.state.text==null || this.state.text.length==0||this.state.text==null)&&(this.state.location==null || this.state.location.length==0)){
+          alert('Invalid Input. Please fill the entry.');
+        }else{
+          this.props.navigation.push('findPage',{searchKey:this.state.text,location:this.state.location});
+          this.setState({text:''});
+      }
+        }}
+      title='Find Jobs' buttonStyle={searchHomeStyle.searchButton} titleStyle={searchHomeStyle.searchButTitle}/>
+    </View>
+    :
+    <View style={[searchHomeStyle.searchView,{justifyContent:'space-evenly'}]}>
+      <Image
+        style={{marginBottom:15,marginTop:25}}
+        source={require('../assets/LOGOside.png')}
+      />
+        <Autocomplete
            onBlur={()=>this.setState({predictions:[]})}
-           // containerStyle={{borderColor:'transparent'}}
-           style={searchHomeStyle.input}
+           style={[searchHomeStyle.input,{paddingLeft:15}]}
            listContainerStyle={searchHomeStyle.outsideInput}
            listStyle={{maxHeight:120}}
            autoCorrect={false}
@@ -315,11 +384,8 @@ class Home extends React.Component{
               </Text>
             )}
         />
-        </View>
-        <View style={{zIndex:1,marginTop:10}}>
-          <MatIcon style={searchHomeStyle.icon} name='search' color='#45546d' size={32}/>
-          <Autocomplete
-            style={searchHomeStyle.input}
+        <Autocomplete
+            style={[searchHomeStyle.input,{marginTop:7,paddingLeft:15}]}
             listContainerStyle={searchHomeStyle.outsideInput}
             listStyle={{maxHeight:90}}
             onBlur={()=>this.setState({history:[]})}
@@ -345,18 +411,18 @@ class Home extends React.Component{
                  {word}
                </Text>
              )}
-          />
-        </View>
-        <Button onPress={()=>{
-          if((this.state.text==null || this.state.text.length==0||this.state.text==null)&&(this.state.location==null || this.state.location.length==0)){
-            alert('Invalid Input. Please fill the entry.');
-          }else{
-            this.props.navigation.push('findPage',{searchKey:this.state.text,location:this.state.location});
-            this.setState({text:''});
-        }
-          }}
-        title='Find Jobs' buttonStyle={searchHomeStyle.searchButton} titleStyle={searchHomeStyle.searchButTitle}/>
-      </View>
+        />
+      <Button onPress={()=>{
+        if((this.state.text==null || this.state.text.length==0||this.state.text==null)&&(this.state.location==null || this.state.location.length==0)){
+          alert('Invalid Input. Please fill the entry.');
+        }else{
+          this.props.navigation.push('findPage',{searchKey:this.state.text,location:this.state.location});
+          this.setState({text:''});
+      }
+        }}
+      title='Find Jobs' buttonStyle={searchHomeStyle.searchButton} titleStyle={searchHomeStyle.searchButTitle}/>
+    </View>
+    }
       <Divider/>
       {!this.state.guest && this.state.display ?
         <View>
@@ -382,7 +448,7 @@ class Home extends React.Component{
                       onPress = {()=>this.props.navigation.push('expandJob',{job:l[0],userid:this.state.userid})}
                       rightIcon={<AntIcon name='right' color='gray' size={25}/>}
                       title={l[0].title}
-                      titleStyle={{fontFamily:'Avenir',fontSize:18}}
+                      titleStyle={searchHomeStyle.listItemTitle}
                       subtitle={l[0].company}
                       subtitleStyle={{fontSize:14,color:'gray'}}
                     />
@@ -410,7 +476,7 @@ class Home extends React.Component{
                       onPress = {()=>this.props.navigation.push('expandJob',{job:l[0],userid:this.state.userid})}
                       rightIcon={<AntIcon name='right' color='gray' size={25}/>}
                       title={l[0].title}
-                      titleStyle={{fontFamily:'Avenir',fontSize:18}}
+                      titleStyle={searchHomeStyle.listItemTitle}
                       subtitle={l[0].company}
                       subtitleStyle={{fontSize:14,color:'gray'}}
                     />

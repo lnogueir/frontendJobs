@@ -25,7 +25,7 @@ class notificationPage extends React.Component{
 
   static navigationOptions = ({navigation}) => {
     return {
-      headerLeft:<Button onPress={()=>navigation.navigate('accountPage')} title=' Account' type='clear' icon={<Icon name='chevron-left' color='#397af8' size={20}/>}/>,
+      headerLeft:Platform.OS=='ios'?<Button onPress={()=>navigation.navigate('accountPage')} title=' Account' type='clear' icon={<Icon name='chevron-left' color='#397af8' size={20}/>}/>:null,
       headerRight:<Image
         style={{width:40,height:46}}
         source={require('../assets/PlanetJobLogo.png')}

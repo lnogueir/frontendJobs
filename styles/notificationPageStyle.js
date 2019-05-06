@@ -19,7 +19,7 @@ const notificationPageStyle = StyleSheet.create({
   textStyle:{
     fontSize:17,
     lineHeight:40,
-    fontFamily:Platform.OS=='ios'?'Avenir':'Nunito'
+    fontFamily:Platform.OS =='ios'?'Avenir':'sans-serif-condensed',
   },
   switchStyle:{
     lineHeight:40,

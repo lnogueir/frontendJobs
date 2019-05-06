@@ -18,7 +18,7 @@ const expandStyle = StyleSheet.create({
     margin:5,
   },
   fontStyle:{
-    fontFamily:Platform.OS =='ios'?'Avenir':null,
+    fontFamily:Platform.OS =='ios'?'Avenir':'sans-serif-condensed',
     paddingHorizontal:10,
     fontSize:32,
     textAlign:'center',
@@ -40,7 +40,7 @@ const expandStyle = StyleSheet.create({
     margin:7,
   },
   aboutText:{
-    fontFamily:Platform.OS =='ios'?'Avenir':null,
+    fontFamily:Platform.OS =='ios'?'Avenir':'sans-serif-condensed',
     fontSize:27,
     fontWeight:'300'
   },
@@ -51,11 +51,11 @@ const expandStyle = StyleSheet.create({
     overflow:'hidden',
     backgroundColor:'whitesmoke',
     borderRadius:20,
-    paddingBottom:70
+    paddingBottom:Platform.OS=='ios'?70:null
   },
   applyView:{backgroundColor:'transparent',alignItems:'flex-end',flexDirection:'row',justifyContent:'space-evenly',width:'100%'},
   applyButton:{
-    width:wp('70%'),
+    width:wp('75%'),
     borderRadius:30,
     backgroundColor:'#45546d',
   },
@@ -69,14 +69,15 @@ const expandStyle = StyleSheet.create({
   floatingButt:{
     alignSelf: 'flex-start',
     position: 'absolute',
+    overflow:'hidden',
     bottom: 15,
     left:15
   },
   floatingButt2:{
-    position: 'absolute',
+    position: Platform.OS=='ios'?'absolute':'relative',
     bottom: 8,
-    alignSelf:'flex-end',
-    right:15,
+    alignSelf:'center',
+    // right:15,
   }
 
 })

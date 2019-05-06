@@ -386,7 +386,7 @@ class accountPage extends React.Component{
         <Overlay
             isVisible={this.state.isVisible}
             width='70%'
-            height='38%'
+            height={Platform.OS=='ios'?null:null}
             windowBackgroundColor="rgba(255, 255, 255, .5)"
             onBackdropPress={() => {
               this.getUserInfo()

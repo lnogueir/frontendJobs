@@ -17,7 +17,7 @@ class expandJob extends React.Component{
     this.state={
       userid:this.props.navigation.getParam('userid','Invalid userid'),
       job:this.props.navigation.getParam('job','Invalid job'),
-      shortlist:{},
+      shortlist:[],
       guest:null,
       // displayFooter:this.props.navigation.getParam('display','Invalid display'),
     };
@@ -96,15 +96,8 @@ class expandJob extends React.Component{
           }).then((jobResponse)=>jobResponse.json())
             .then((finalResponse)=>{
               if(this._isMounted){
-                let tempDic={}
-                for(var i=0;i<finalResponse.jobs.length;i++){
-                  // console.log(finalResponse.jobs[i])
-                  tempDic[finalResponse.jobs[i][0].id]= finalResponse.jobs[i][0].id
-                }
-                this.setState({shortlist:tempDic})
-                // this.setState({shortlist:finalResponse.jobs})
+                this.setState({shortlist:finalResponse.jobs.map(job=>{return job[0].id})})
                }
-              // console.log(this.state.shortlist[0][0].title)
             })
           return responseJson.result;
         }catch(error){
@@ -132,13 +125,11 @@ class expandJob extends React.Component{
        let responseJson = await response.json();
        if(responseJson.error!=undefined){
          alert("Sorry, something went wrong")
+
        }else{
-         let tempDic = {}
-         tempDic[jobId] = jobId
-         this.setState({shortlist:{...this.state.shortlist,...tempDic}})
-         // console.log(this.state.shortlist)
-         // this.populateShortlist()
+         this.setState({shortlist:[...this.state.shortlist,jobId]})
        }
+       this.setState({waiting:this.state.waiting.map((entry)=>{return false})})
        return responseJson.result;
      }catch(error){
        console.log(error)
@@ -179,9 +170,9 @@ class expandJob extends React.Component{
    }
   }
 
-    isJobInShortlist = (id) => {
-      return this.state.shortlist[id]==id
-    }
+  isJobInShortlist = (id) => {
+    return this.state.shortlist.includes(id)
+  }
 
     // addFooter = () => {
     //   return(
@@ -212,11 +203,24 @@ class expandJob extends React.Component{
           disabled type='clear' title={this.state.job.company}
           disabledStyle={{alignSelf:'center'}}
           />
-          <Button icon={<MatIcon name='location-on' color='#45546d' size={35}/>}
-          disabled disabledTitleStyle={{fontSize:22}}
-          // disabledStyle={{alignSelf:'flex-start',paddingHorizontal:25}}
-          type='clear' title={this.state.job.location}
-          />
+          <View style={expandStyle.rowView}>
+            <Button style={{lineHeight:40}} icon={<MatIcon name='location-on' color='#45546d' size={35}/>}
+            disabled disabledTitleStyle={{fontSize:22}}
+            type='clear' title={this.state.job.location}
+            />
+            <MatIcon onPress ={() => {
+                if(!this.state.guest){
+                  if(this.isJobInShortlist(this.state.job.id)){
+                      this.deleteShortlist(this.state.job.id,false)
+                  }else{
+                      this.toShortlist(this.state.job.id)
+                  }
+                }else{
+                    alert("You must create an account in order to have a shortlist.")
+                }
+              }}
+            style={{lineHeight:60}} raised reverse name={this.isJobInShortlist(this.state.job.id)?'bookmark':'bookmark-border'} color='black' size={63}/>
+          </View>
         </View>
         <View style={expandStyle.aboutStyle}>
           <Text style={expandStyle.aboutText}>About the Job</Text>
@@ -224,21 +228,12 @@ class expandJob extends React.Component{
         <ScrollView contentContainerStyle={expandStyle.container}>
             <Text style={expandStyle.textStyle}>{this.state.job.text}</Text>
         </ScrollView>
-        <Button style={expandStyle.floatingButt2} titleStyle={expandStyle.applyTitle} buttonStyle={expandStyle.applyButton}
-        onPress={() => Linking.openURL(this.state.job.link)}
-        title='APPLY'/>
-        <MatIcon onPress ={() => {
-            if(!this.state.guest){
-              if(this.isJobInShortlist(this.state.job.id)){
-                  this.deleteShortlist(this.state.job.id,false)
-              }else{
-                  this.toShortlist(this.state.job.id)
-              }
-            }else{
-                alert("You must create an account in order to have a shortlist.")
-            }
-          }}
-        style={expandStyle.floatingButt} raised reverse name={this.isJobInShortlist(this.state.job.id)?'bookmark':'bookmark-border'} color='black' size={63}/>
+        <View style={{alignItems:'center',justifyContent:'center'}}>
+          <Button style={expandStyle.floatingButt2} titleStyle={expandStyle.applyTitle} buttonStyle={expandStyle.applyButton}
+          onPress={() => Linking.openURL(this.state.job.link)}
+          title='APPLY'/>
+        </View>
+
         <View style={expandStyle.footer}></View>
     </View>
 

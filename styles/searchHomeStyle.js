@@ -87,7 +87,8 @@ const searchHomeStyle = StyleSheet.create({
   emptyText:{
     fontFamily:Platform.OS=='ios'?'Avenir':null,
     fontSize:23,
-  }
+  },
+  listItemTitle:{fontFamily:Platform.OS=='ios'?'Avenir':null,fontSize:18}  
 
 
 })
