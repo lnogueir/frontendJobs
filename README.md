@@ -13,11 +13,11 @@ What first had been a simple fun project turn out to be a pretty big part of us.
 ## Home and Profile Page:
 <a href="https://imgflip.com/gif/30zfe6"><img src="https://i.imgflip.com/30zfe6.gif" title="made at imgflip.com"/></a>
 
-## Notification and Login Page:
-<a href="https://imgflip.com/gif/30zfk9"><img src="https://i.imgflip.com/30zfk9.gif" title="made at imgflip.com"/></a>
-
 ## Applying
 <a href="https://imgflip.com/gif/30zglc"><img src="https://i.imgflip.com/30zglc.gif" title="made at imgflip.com"/></a>
+
+## Notification and Login Page:
+<a href="https://imgflip.com/gif/30zfk9"><img src="https://i.imgflip.com/30zfk9.gif" title="made at imgflip.com"/></a>
 
 ## Using search bar
 <a href="https://imgflip.com/gif/30zgxd"><img src="https://i.imgflip.com/30zgxd.gif" title="made at imgflip.com"/></a>
