@@ -11,7 +11,6 @@ import {widthPercentageToDP as wp,
   listenOrientationChange as loc,
   removeOrientationListener as rol
 } from 'react-native-responsive-screen';
-import helpers from '../globalFunctions.js';
 import shortListPage from './shortlist.js';
 import loginPage from './login.js';
 import signupPage from './signup.js';

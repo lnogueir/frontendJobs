@@ -8,8 +8,6 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import MatIcon from 'react-native-vector-icons/MaterialIcons';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import EntIcon from 'react-native-vector-icons/Entypo';
-import helpers from './globalFunctions.js';
-
 import shortListPage from './screens/shortlist.js';
 import loginPage from './screens/login.js';
 import signupPage from './screens/signup.js';

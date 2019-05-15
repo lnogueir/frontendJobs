@@ -9,5 +9,19 @@ My colleague and I used several resources in order to be as effective as possibl
 What first had been a simple fun project turn out to be a pretty big part of us. We ended up building an app with more functionalities than we had expected. We've designed a notification system, shortlist, user registry, guest mechanism, recommendation, shortlist, search by tag and location and more. We hope to soon launch the app for the public.
 # Some GIFs on the app's main resources:
 
+## Home and Profile Page:
+<a href="https://imgflip.com/gif/30zfe6"><img src="https://i.imgflip.com/30zfe6.gif" title="made at imgflip.com"/></a>
+
+## Notification and Login Page:
+<a href="https://imgflip.com/gif/30zfk9"><img src="https://i.imgflip.com/30zfk9.gif" title="made at imgflip.com"/></a>
+
+## Applying
+<a href="https://imgflip.com/gif/30zglc"><img src="https://i.imgflip.com/30zglc.gif" title="made at imgflip.com"/></a>
+
+## Using search bar
+<a href="https://imgflip.com/gif/30zgxd"><img src="https://i.imgflip.com/30zgxd.gif" title="made at imgflip.com"/></a>
+
+## Shortlisting
+<a href="https://imgflip.com/gif/30zh4n"><img src="https://i.imgflip.com/30zh4n.gif" title="made at imgflip.com"/></a>
 
 
